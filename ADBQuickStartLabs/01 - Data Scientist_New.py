@@ -23,11 +23,6 @@ ACCOUNT_KEY = dbutils.widgets.get("ACCOUNT_KEY")
 
 # COMMAND ----------
 
-# DBTITLE 1,Run this step only if you are re-running the notebook
-dbutils.fs.unmount("/mnt/adbquickstart")
-
-# COMMAND ----------
-
 # DBTITLE 1,Mount Blob Storage to DBFS
 run = dbutils.notebook.run('./00 - Setup Storage', 60, {"BLOB_CONTAINER" : BLOB_CONTAINER,"BLOB_ACCOUNT" : BLOB_ACCOUNT,"ACCOUNT_KEY" : ACCOUNT_KEY })
 

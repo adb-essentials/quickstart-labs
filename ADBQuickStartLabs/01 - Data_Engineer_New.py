@@ -30,11 +30,6 @@ ACCOUNT_KEY = dbutils.widgets.get("ACCOUNT_KEY")
 
 # COMMAND ----------
 
-# DBTITLE 1,Run this step only if you are re-running the notebook
-dbutils.fs.unmount("/mnt/adbquickstart")
-
-# COMMAND ----------
-
 # DBTITLE 1,Mount Blob Storage to DBFS
 run = dbutils.notebook.run('./00 - Setup Storage', 60, {"BLOB_CONTAINER" : BLOB_CONTAINER,"BLOB_ACCOUNT" : BLOB_ACCOUNT,"ACCOUNT_KEY" : ACCOUNT_KEY })
 
@@ -45,6 +40,11 @@ run = dbutils.notebook.run('./00 - Setup Storage', 60, {"BLOB_CONTAINER" : BLOB_
 
 # COMMAND ----------
 
+# DBTITLE 1,Create Lab Queries
+# MAGIC %run "../ADBQuickStartLabs/00 - Create Queries"
+
+# COMMAND ----------
+
 # DBTITLE 1,Delete existing files
 #import shutil
 # pyspark.sql.types import *
@@ -52,9 +52,9 @@ run = dbutils.notebook.run('./00 - Setup Storage', 60, {"BLOB_CONTAINER" : BLOB_
 _ = spark.sql('DROP DATABASE IF EXISTS kkbox CASCADE')
 
 # drop any old delta lake files that might have been created
-dbutils.fs.rm('/dbfs/mnt/adbquickstart/bronze', recurse=True)
-dbutils.fs.rm('/dbfs/mnt/adbquickstart/gold', recurse=True)
-dbutils.fs.rm('/dbfs/mnt/adbquickstart/silver', recurse=True)
+dbutils.fs.rm('/mnt/adbquickstart/bronze', recurse=True)
+dbutils.fs.rm('/mnt/adbquickstart/gold', recurse=True)
+dbutils.fs.rm('/mnt/adbquickstart/silver', recurse=True)
 dbutils.fs.rm('/mnt/adbquickstart/checkpoint', recurse=True)
 # create database to house SQL tables
 _ = spark.sql('CREATE DATABASE kkbox')
@@ -203,7 +203,7 @@ dfBronze.writeStream \
 # COMMAND ----------
 
 # DBTITLE 1,Cool.. Lets see if we could see the files in the member delta folder
-# MAGIC %fs ls /mnt/adbquickstart/bronze/
+# MAGIC %fs ls /mnt/adbquickstart/bronze/members/
 
 # COMMAND ----------
 
@@ -239,6 +239,11 @@ dfBronze.writeStream \
 
 # COMMAND ----------
 
+# MAGIC %sql
+# MAGIC SELECT * FROM kkbox.user_log
+
+# COMMAND ----------
+
 # DBTITLE 1,Great !!! Now lets read the data and see if everything went well.
 ## Read the Bronze Data
 transactions_bronze = spark.read.format("delta").load('/mnt/adbquickstart/bronze/transactions/')
@@ -259,7 +264,7 @@ user_logs_bronze = spark.read.format("delta").load('/mnt/adbquickstart/bronze/us
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC drop table kkbox.members_gold
+# MAGIC drop table if exists kkbox.members_gold
 
 # COMMAND ----------
 
@@ -277,7 +282,7 @@ members_gold.createOrReplaceTempView("member_gold")
 members_gold.write.format('delta').mode('overwrite').option('path', '/mnt/adbquickstart/gold/members/').saveAsTable('kkbox.members_gold')
 
 spark.sql('''
-  CREATE TABLE kkbox.members_gold
+  CREATE TABLE IF NOT EXISTS kkbox.members_gold
   USING DELTA 
   LOCATION '/mnt/adbquickstart/gold/members/'
   ''')
@@ -520,9 +525,6 @@ display(member_dummy)
 # MAGIC   count LONG
 # MAGIC )
 # MAGIC USING delta 
-# MAGIC TBLPROPERTIES (
-# MAGIC   'delta.autoOptimize.optimizeWrite' = 'true',
-# MAGIC   'delta.enableChangeDataFeed' = 'true');
 
 # COMMAND ----------
 
@@ -555,11 +557,9 @@ display(member_dummy)
 
 # MAGIC %md
 # MAGIC ### ANALYZE TABLE
-# MAGIC The ANALYZE TABLE statement collects statistics about one specific table or all the tables in one specified database, that are to be used by the query optimizer to find a better query execution planIDENTITY COLUMN
-# MAGIC Delta Lake now supports identity columns. When you write to a Delta table that defines an identity column, and you do not provide values for that column, Delta now automatically assigns a unique and statistically increasing or decreasing value.
+# MAGIC The ANALYZE TABLE statement collects statistics about one specific table or all the tables in one specified database, that are to be used by the query optimizer to find a better query execution plan
 
 # COMMAND ----------
 
 # MAGIC %sql
 # MAGIC ANALYZE TABLE kkbox.members_gold COMPUTE STATISTICS;
-# MAGIC DESC EXTENDED kkbox.members_gold;

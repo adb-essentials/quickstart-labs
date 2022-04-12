@@ -15,6 +15,11 @@ print(BLOB_ACCOUNT)
 
 # COMMAND ----------
 
+# DBTITLE 1,Run this step only if you are re-running the notebook
+dbutils.fs.unmount("/mnt/adbquickstart")
+
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC ### Mounting Azure Storage using an Access Key or Service Principal
 # MAGIC We will mount an Azure blob storage container to the workspace using a shared Access Key. More instructions can be found [here](https://docs.microsoft.com/en-us/azure/databricks/data/data-sources/azure/azure-storage#--mount-azure-blob-storage-containers-to-dbfs). 
@@ -33,7 +38,3 @@ dbutils.fs.mount(
     f"fs.azure.account.key.{BLOB_ACCOUNT}.blob.core.windows.net":ACCOUNT_KEY
   }
 )
-
-# COMMAND ----------
-
-# MAGIC %run "../ADBQuickStartLabs/00 - Create Queries"
