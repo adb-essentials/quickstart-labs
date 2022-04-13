@@ -1,16 +1,18 @@
 # Databricks notebook source
 # DBTITLE 1,Delete existing files
-import shutil
-pyspark.sql.types import *
 # delete the old database and tables if needed
 _ = spark.sql('DROP DATABASE IF EXISTS kkbox CASCADE')
 
 # drop any old delta lake files that might have been created
-shutil.rmtree('/dbfs/mnt/adbquickstart/bronze', ignore_errors=True)
-shutil.rmtree('/dbfs/mnt/adbquickstart/gold', ignore_errors=True)
-shutil.rmtree('/dbfs/mnt/adbquickstart/silver', ignore_errors=True)
-shutil.rmtree('/mnt/adbquickstart/checkpoint/members', ignore_errors=True)
-# dbutils.fs.rm('/mnt/adbquickstart/silver/trainingdata', recurse=True)
+dbutils.fs.rm('/mnt/adbquickstart/bronze', recurse=True)
+dbutils.fs.rm('/mnt/adbquickstart/gold', recurse=True)
+dbutils.fs.rm('/mnt/adbquickstart/silver', recurse=True)
+dbutils.fs.rm('/mnt/adbquickstart/checkpoint', recurse=True)
+
+dbutils.fs.rm('/mnt/adbquickstart/silver/member_feature', recurse=True)
+dbutils.fs.rm('/mnt/adbquickstart/silver/churndata', recurse=True)
+dbutils.fs.rm('/mnt/adbquickstart/silver/trainingdata', recurse=True)
+dbutils.fs.rm('/mnt/adbquickstart/gold/scoreddata', recurse=True)
 # create database to house SQL tables
 _ = spark.sql('CREATE DATABASE kkbox')
 

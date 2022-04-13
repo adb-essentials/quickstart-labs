@@ -38,6 +38,11 @@ run = dbutils.notebook.run('./00 - Setup Storage', 60, {"BLOB_CONTAINER" : BLOB_
 
 # COMMAND ----------
 
+# DBTITLE 1,Create Lab Queries
+# MAGIC %run "../ADBQuickStartLabs/00 - Create Queries"
+
+# COMMAND ----------
+
 # DBTITLE 0,ML Architecture
 # MAGIC %md
 # MAGIC <img src="https://publicimg.blob.core.windows.net/images/DS.png" width="1200">
@@ -45,34 +50,9 @@ run = dbutils.notebook.run('./00 - Setup Storage', 60, {"BLOB_CONTAINER" : BLOB_
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Databricks Machine Learning is a data native solution that enables data scientists to do end-to-end ML/DS at one single place without moving data or code to different platforms.
+# MAGIC ## Databricks Machine Learning is a data native solution that enables data scientists to do end-to-end ML/DS in one single platform without moving data or code to different platforms.
 # MAGIC 
 # MAGIC The journey of a data science project starts from accessing the data, understanding the data and then moving on to steps such as feature engineering, feature store creation/maintenance, model creation, model management and finally model serving. Using Databricks one can accomplish all the steps at one place.
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC Drop tables, truncate storage, and install libraries
-
-# COMMAND ----------
-
-# MAGIC %sql
-# MAGIC DROP TABLE IF EXISTS kkbox.member_features;
-# MAGIC DROP TABLE IF EXISTS kkbox.churndata;
-# MAGIC DROP TABLE IF EXISTS kkbox.trainingdata;
-# MAGIC DROP TABLE IF EXISTS kkbox.scoreddata
-
-# COMMAND ----------
-
-# fs = FeatureStoreClient()
-# fs._catalog_client.delete_feature_table("kkbox.member_features")
-
-# COMMAND ----------
-
-dbutils.fs.rm('/mnt/adbquickstart/silver/member_feature', recurse=True)
-dbutils.fs.rm('/mnt/adbquickstart/silver/churndata', recurse=True)
-dbutils.fs.rm('/mnt/adbquickstart/silver/trainingdata', recurse=True)
-dbutils.fs.rm('/mnt/adbquickstart/gold/scoreddata', recurse=True)
 
 # COMMAND ----------
 
@@ -82,11 +62,11 @@ dbutils.fs.rm('/mnt/adbquickstart/gold/scoreddata', recurse=True)
 
 # COMMAND ----------
 
-# MAGIC %python
-# MAGIC transactions = spark.read.format("delta").load('/mnt/adbquickstart/bronze/transactions/') ## This dataset is pre-loaded
-# MAGIC members = spark.read.format("delta").load('/mnt/adbquickstart/bronze/members/')           ## This dataset is pre-loaded
-# MAGIC user_logs = spark.read.format("delta").load('/mnt/adbquickstart/bronze/user_log/')
-# MAGIC train = spark.read.format("delta").load('/mnt/adbquickstart/bronze/train/')
+# DBTITLE 1,Load pre-loaded data
+transactions = spark.read.format("delta").load('/mnt/adbquickstart/bronze/transactions/') 
+members = spark.read.format("delta").load('/mnt/adbquickstart/bronze/members/')           
+user_logs = spark.read.format("delta").load('/mnt/adbquickstart/bronze/user_log/')
+train = spark.read.format("delta").load('/mnt/adbquickstart/bronze/train/')
 
 # COMMAND ----------
 
@@ -101,39 +81,36 @@ dbutils.fs.rm('/mnt/adbquickstart/gold/scoreddata', recurse=True)
 # COMMAND ----------
 
 # DBTITLE 1,Aggregate user log data
-# MAGIC %python
-# MAGIC #The user_log data is 
-# MAGIC user_logs_consolidated = user_logs.groupBy('msno').agg(count("msno").alias('no_transactions'),
-# MAGIC                                  sum('num_25').alias('Total25'),sum('num_100').alias('Total100'), mean('num_unq').alias('UniqueSongs'),mean('total_secs').alias('TotalSecHeard')
-# MAGIC                                )
-# MAGIC 
-# MAGIC display(user_logs_consolidated)
+user_logs_consolidated = user_logs.groupBy('msno').agg(count("msno").alias('no_transactions'),
+                                 sum('num_25').alias('Total25'),sum('num_100').alias('Total100'), mean('num_unq').alias('UniqueSongs'),mean('total_secs').alias('TotalSecHeard')
+                               )
+
+display(user_logs_consolidated)
 
 # COMMAND ----------
 
 # DBTITLE 1,Create member feature table
-# MAGIC %python
-# MAGIC #The user_log data is 
-# MAGIC member_feature = user_logs_consolidated.join(members, "msno")
-# MAGIC #remove Age Oultlier. If age is greater than 100 or less than 15 we remove it
-# MAGIC member_feature = member_feature.where("bd between 15 and 100")
-# MAGIC 
-# MAGIC #fill NA for gender not present
-# MAGIC colNames = ["gender"]
-# MAGIC member_feature = member_feature.na.fill("NA", colNames)
-# MAGIC 
-# MAGIC #Handle gender categorical variable:
-# MAGIC gender_index=StringIndexer().setInputCol("gender").setOutputCol("gender_indexed")
-# MAGIC member_feature=gender_index.fit(member_feature).transform(member_feature)
-# MAGIC 
-# MAGIC member_feature.write.format('delta').mode('overwrite').option("mergeSchema","true").save('/mnt/adbquickstart/silver/member_feature')
-# MAGIC 
-# MAGIC # create table object to make delta lake queriable
-# MAGIC spark.sql('''
-# MAGIC   CREATE TABLE IF NOT EXISTS kkbox.member_features
-# MAGIC   USING DELTA 
-# MAGIC   LOCATION '/mnt/adbquickstart/silver/member_feature'
-# MAGIC   ''')
+#The user_log data
+member_feature = user_logs_consolidated.join(members, "msno")
+#remove Age Oultlier. If age is greater than 100 or less than 15 we remove it
+member_feature = member_feature.where("bd between 15 and 100")
+
+#fill NA for gender not present
+colNames = ["gender"]
+member_feature = member_feature.na.fill("NA", colNames)
+
+#Handle gender categorical variable:
+gender_index=StringIndexer().setInputCol("gender").setOutputCol("gender_indexed")
+member_feature=gender_index.fit(member_feature).transform(member_feature)
+
+member_feature.write.format('delta').mode('overwrite').option('mergeSchema','true').save('/mnt/adbquickstart/silver/member_feature')
+
+# create table object to make delta lake queriable
+spark.sql('''
+  CREATE TABLE IF NOT EXISTS kkbox.member_features
+  USING DELTA 
+  LOCATION '/mnt/adbquickstart/silver/member_feature'
+  ''')
 
 # COMMAND ----------
 
@@ -145,7 +122,7 @@ fs = FeatureStoreClient()
 fs.register_table(
   delta_table='kkbox.member_features',
   primary_keys='msno',
-  description='Member features'
+  description='Member features commonly used in ML model'
 )
 
 # COMMAND ----------
@@ -169,38 +146,35 @@ fs.register_table(
 # COMMAND ----------
 
 # DBTITLE 1,Merge datasets 
-# MAGIC %python
-# MAGIC data = transactions.join(train,"msno").join(members, "msno")
-# MAGIC columns_to_drop = ['city', 'bd', 'registered_via' ]
-# MAGIC data = data.drop(*columns_to_drop)
-# MAGIC display(data)
+data = transactions.join(train,"msno").join(members, "msno")
+columns_to_drop = ['city', 'bd', 'registered_via' ]
+data = data.drop(*columns_to_drop)
+display(data)
 
 # COMMAND ----------
 
-# DBTITLE 1,Data Cleaning and Feature Engineering
-# MAGIC %python
-# MAGIC 
-# MAGIC # Create a Feature Days a userhas been on platform
-# MAGIC churn_data =  data.withColumn("DaysOnBoard",datediff(to_date(data['membership_expire_date'], 'yyyyMMdd'),data['registration_init_time']))
-# MAGIC #Find out if there was a discount provided to the user
-# MAGIC churn_data = churn_data.withColumn("Discount", churn_data['actual_amount_paid']-churn_data['plan_list_price'])
-# MAGIC #churn_data.where("Discount > 0").show()
-# MAGIC 
-# MAGIC #dropping unrequired columns: 
-# MAGIC columns_to_drop = ['membership_expire_date', 'registration_init_time', 'actual_amount_paid', 'plan_list_price', 'transaction_date' ]
-# MAGIC churn_data = churn_data.drop(*columns_to_drop)
-# MAGIC 
-# MAGIC colNames = ["gender"]
-# MAGIC churn_data = churn_data.na.fill("NA", colNames)
-# MAGIC 
-# MAGIC churn_data.write.format('delta').mode('overwrite').option("mergeSchema","true").save('/mnt/adbquickstart/silver/churndata')
-# MAGIC 
-# MAGIC # create table object to make delta lake queriable
-# MAGIC spark.sql('''
-# MAGIC   CREATE TABLE IF NOT EXISTS kkbox.churndata
-# MAGIC   USING DELTA 
-# MAGIC   LOCATION '/mnt/adbquickstart/silver/churndata'
-# MAGIC   ''')
+# DBTITLE 1,Inference Data Cleaning and Feature Engineering
+# Create a Feature Days a userhas been on platform
+churn_data =  data.withColumn("DaysOnBoard",datediff(to_date(data['membership_expire_date'], 'yyyyMMdd'),data['registration_init_time']))
+#Find out if there was a discount provided to the user
+churn_data = churn_data.withColumn("Discount", churn_data['actual_amount_paid']-churn_data['plan_list_price'])
+#churn_data.where("Discount > 0").show()
+
+#dropping unrequired columns: 
+columns_to_drop = ['membership_expire_date', 'registration_init_time', 'actual_amount_paid', 'plan_list_price', 'transaction_date' ]
+churn_data = churn_data.drop(*columns_to_drop)
+
+colNames = ["gender"]
+churn_data = churn_data.na.fill("NA", colNames)
+
+churn_data.write.format('delta').mode('overwrite').option("mergeSchema","true").save('/mnt/adbquickstart/silver/churndata')
+
+# create table object to make delta lake queriable
+spark.sql('''
+  CREATE TABLE IF NOT EXISTS kkbox.churndata
+  USING DELTA 
+  LOCATION '/mnt/adbquickstart/silver/churndata'
+  ''')
 
 # COMMAND ----------
 
@@ -245,7 +219,7 @@ display(training_df)
 
 # COMMAND ----------
 
-training_df.write.format('delta').mode('overwrite').option("mergeSchema","true").save('/mnt/adbquickstart/silver/trainingdata')
+training_df.write.format('delta').mode('overwrite').option('mergeSchema','true').save('/mnt/adbquickstart/silver/trainingdata')
 
 # create table object to make delta lake queriable
 spark.sql('''
@@ -339,7 +313,7 @@ summary = automl.classify(
 
 # COMMAND ----------
 
-# DBTITLE 1,Give model a name
+# DBTITLE 1,Give the model a name
 # MAGIC %md
 # MAGIC <img src="https://publicimg.blob.core.windows.net/images/NewMLImages/ML3.png" width="600">
 
@@ -380,10 +354,12 @@ summary = automl.classify(
 
 # COMMAND ----------
 
+#get the best trial from our AutoML run programmatically
 print(summary.best_trial)
 
 # COMMAND ----------
 
+# Register the best model run
 model_name = "KKBox-Churn-Prediction"
 
 model_uri = f"runs:/{summary.best_trial.mlflow_run_id}/model"
@@ -459,6 +435,9 @@ model_version = registered_model_version.version
 
 model_uri=f"models:/{model_name}/{model_version}"
 
+# Create a python function using the model_uri
+# score the testDF dataframe using the python function
+# Batch scoring in Databricks is that easy and scalable
 predict = mlflow.pyfunc.spark_udf(spark, model_uri)
 predDF = testDF.withColumn("prediction", predict(*testDF.drop("is_churn").columns))
 display(predDF)
@@ -472,6 +451,7 @@ display(predDF)
 
 from pyspark.ml.evaluation import MulticlassClassificationEvaluator
 
+# How accurate was our model against the testDF dataframe?
 evaluator = MulticlassClassificationEvaluator(labelCol="is_churn", predictionCol="prediction")
 f1 = evaluator.setMetricName("f1").evaluate(predDF)
 print(f"f1 on test dataset: {f1}")
@@ -484,9 +464,9 @@ print(f"f1 on test dataset: {f1}")
 # COMMAND ----------
 
 goldDF = spark.table('kkbox.trainingdata')
-goldDF.withColumn("prediction", predict(*goldDF.drop("is_churn").columns))
+goldDF = goldDF.withColumn("prediction", predict(*goldDF.drop("is_churn").columns))
 
-goldDF.write.format('delta').mode('overwrite').option("mergeSchema","true").save('/mnt/adbquickstart/gold/scoreddata')
+goldDF.write.format('delta').mode('overwrite').option('mergeSchema','true').save('/mnt/adbquickstart/gold/scoreddata')
 
 # create table object to make delta lake queriable
 spark.sql('''
@@ -522,13 +502,9 @@ spark.sql('''
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Select MLflow Model Serving compute size
+# MAGIC Select MLflow Model Serving compute size and click Save
 # MAGIC 
 # MAGIC <img src="https://publicimg.blob.core.windows.net/images/Serving2.png" width="800">
-
-# COMMAND ----------
-
-
 
 # COMMAND ----------
 
@@ -538,8 +514,11 @@ import requests
 import numpy as np
 import pandas as pd
 
-ModelName = "KKBox-Churn-Prediction"
-Version = "2"
+# ModelName = "KKBox-Churn-Prediction"
+# Version = "2"
+
+ModelName = model_name
+Version = model_version
 
 url = f'https://{Workspace}/model/{ModelName}/{Version}/invocations'
 
@@ -557,17 +536,18 @@ def score_model(dataset):
 
 # COMMAND ----------
 
+# Generate some testing data to send to the model REST API
 new_data_pandas = testDF.drop("is_churn").limit(5).withColumn("registration_init_time", testDF.registration_init_time.cast(StringType())).toPandas()
 new_data_pandas
 
 # COMMAND ----------
 
-# MAGIC %python
-# MAGIC # Model serving is designed for low-latency predictions on smaller batches of data
-# MAGIC served_predictions = score_model(new_data_pandas)
-# MAGIC pd.DataFrame({
-# MAGIC   "Served Model Prediction": served_predictions,
-# MAGIC })
+# Score the data via the MLFlow model REST API
+# Model serving is designed for low-latency predictions on smaller batches of data
+served_predictions = score_model(new_data_pandas)
+pd.DataFrame({
+  "Served Model Prediction": served_predictions,
+})
 
 # COMMAND ----------
 
@@ -575,15 +555,3 @@ new_data_pandas
 # MAGIC Turn off MLflow Model Serving compute
 # MAGIC 
 # MAGIC <img src="https://publicimg.blob.core.windows.net/images/Serving3.png" width="800">
-
-# COMMAND ----------
-
-workspace_id = dbutils.notebook.entry_point.getDbutils().notebook().getContext().apiUrl().get()
-
-# COMMAND ----------
-
-workspace_id = dbutils.notebook.entry_point.getDbutils().notebook().getContext().tags().get("orgId").getOrElse(None)
-
-# COMMAND ----------
-
-print(workspace_id)
