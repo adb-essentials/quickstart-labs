@@ -12,18 +12,6 @@
 -- COMMAND ----------
 
 -- MAGIC %md
--- MAGIC ## Accessing Your Enterprise Data Lake
--- MAGIC Databricks enables an architecture where your analytics is decoupled from your data storage. This allows organizations to store their data cost effectively in Azure Storage and share their data across best of breed tools in Azure without duplicating it in data silos. 
--- MAGIC 
--- MAGIC <img src="https://sguptasa.blob.core.windows.net/random/Delta%20Lakehouse.png" width=800>
--- MAGIC 
--- MAGIC In this notebook, we focus exclusively on the **SQL Analytics** user. Subsequent quickstart labs will demonstrate data science, data engineering and machine learning on the same data set without duplicating it. 
--- MAGIC 
--- MAGIC Run the code below to set up your storage access in Databricks.
-
--- COMMAND ----------
-
--- MAGIC %md
 -- MAGIC **IMPORTANT: Before you start, copy and paste your lab environment's storage information into the widgets at the top of the `00 - Setup Storage` notebook.**
 
 -- COMMAND ----------
