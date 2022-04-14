@@ -38,11 +38,6 @@ run = dbutils.notebook.run('./00 - Setup Storage', 60, {"BLOB_CONTAINER" : BLOB_
 
 # COMMAND ----------
 
-# DBTITLE 1,Create Lab Queries
-# MAGIC %run "../ADBQuickStartLabs/00 - Create Queries"
-
-# COMMAND ----------
-
 # DBTITLE 0,ML Architecture
 # MAGIC %md
 # MAGIC <img src="https://publicimg.blob.core.windows.net/images/DS.png" width="1200">

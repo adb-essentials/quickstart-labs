@@ -178,3 +178,8 @@ spark.sql('''
   USING DELTA 
   LOCATION '/mnt/adbquickstart/bronze/train'
   ''')
+
+# COMMAND ----------
+
+Databricks_Token = dbutils.notebook.entry_point.getDbutils().notebook().getContext().apiToken().getOrElse(None)
+Workspace = dbutils.notebook.entry_point.getDbutils().notebook().getContext().tags().get("browserHostName").getOrElse(None)

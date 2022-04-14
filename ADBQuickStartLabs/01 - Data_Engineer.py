@@ -40,11 +40,6 @@ run = dbutils.notebook.run('./00 - Setup Storage', 60, {"BLOB_CONTAINER" : BLOB_
 
 # COMMAND ----------
 
-# DBTITLE 1,Create Lab Queries
-# MAGIC %run "../ADBQuickStartLabs/00 - Create Queries"
-
-# COMMAND ----------
-
 # DBTITLE 1,Delete existing files
 #import shutil
 # pyspark.sql.types import *

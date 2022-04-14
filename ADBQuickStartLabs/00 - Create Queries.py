@@ -93,23 +93,26 @@ response = requests.post(
 query1 = {
   "data_source_id": datasource,
   "query": """
+-- Let's quickly explore our data
+-- We can also explore our data using the Data Explorer UI
+
 SELECT COUNT(1) FROM kkbox.transactions;
 
 -- SELECT * FROM kkbox.transactions;
 
---SELECT COUNT(1) FROM kkbox.members;
+-- SELECT COUNT(1) FROM kkbox.members;
 
---SELECT * FROM kkbox.members;
+-- SELECT * FROM kkbox.members;
 
--- SELECT COUNT(1) FROM kkbox.user_log
+-- SELECT COUNT(1) FROM kkbox.user_log;
 
--- SELECT * FROM kkbox.user_log
+-- SELECT * FROM kkbox.user_log;
 
--- SELECT COUNT(1) FROM kkbox.churn
+-- SELECT COUNT(1) FROM kkbox.churn;
 
--- SELECT * FROM kkbox.churn
+-- SELECT * FROM kkbox.churn;
 """,
-  "name": "Browse Tables",
+  "name": "Step1. Browse Tables",
   "description": "Browse KKBOX tables.",
 }
 
@@ -124,17 +127,16 @@ response = requests.post(
 
 # COMMAND ----------
 
-response.json()
-
-# COMMAND ----------
-
 query2 = {
   "data_source_id": datasource,
-  "query": """SELECT M.city, COUNT(1) As TransactionCount, SUM(T.actual_amount_paid) AS PaidAmount
+  "query": """
+-- Which cities have the most transactions and amount paid?
+
+SELECT M.city, COUNT(1) As TransactionCount, SUM(T.actual_amount_paid) AS PaidAmount
 FROM kkbox.transactions T INNER JOIN kkbox.members M ON T.msno = M.msno
 GROUP BY M.city
 ORDER BY PaidAmount DESC;""",
-  "name": "Paid Amount by City",
+  "name": "Step2. Paid Amount by City",
   "description": "Paid Amount by City",
 }
 
@@ -149,92 +151,214 @@ response = requests.post(
 
 # COMMAND ----------
 
-response.json()
-
-# COMMAND ----------
-
 query3 = {
   "data_source_id": datasource,
   "query": """
+-- Are our subscribers growing or shrinking?
 
+SELECT date_format(to_date(registration_init_time,'yyyyMMdd'),'y-MM') AS registration_month, 
+  count(*) AS members
+FROM kkbox.members
+GROUP BY registration_month 
+ORDER BY registration_month ASC
 """,
-  "name": "",
-  "description": "",
+  "name": "Step3. Members By Registration Month",
+  "description": "Members By Registration Month",
 }
+
+# COMMAND ----------
+
+import requests
+response = requests.post(
+  'https://%s/api/2.0/preview/sql/queries' % (Workspace),
+  headers={'Authorization': 'Bearer %s' % Databricks_Token},
+  json=query3
+)
 
 # COMMAND ----------
 
 query4 = {
   "data_source_id": datasource,
   "query": """
+-- The data below indicate that we were having steady month-over-month growth until early 2016, but our growth rate has been steadily declining since then.
 
+WITH new_monthly_users AS (
+  SELECT
+    date_format(to_date(registration_init_time, 'yyyyMMdd'), 'y-MM') AS registration_month,
+    count(*) AS new_members
+  FROM
+    kkbox.members
+  GROUP BY
+    registration_month
+)
+SELECT
+  registration_month,
+  new_members,
+  (sum(new_members) OVER (ORDER BY registration_month ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)) AS running_total,
+  new_members / (sum(new_members) OVER (ORDER BY registration_month ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)) AS growth
+FROM
+  new_monthly_users
+ORDER BY
+  registration_month
 """,
-  "name": "",
-  "description": "",
+  "name": "Step4. Monthly User Growth Rate",
+  "description": "Monthly User Growth Rate",
 }
+
+# COMMAND ----------
+
+import requests
+response = requests.post(
+  'https://%s/api/2.0/preview/sql/queries' % (Workspace),
+  headers={'Authorization': 'Bearer %s' % Databricks_Token},
+  json=query4
+)
 
 # COMMAND ----------
 
 query5 = {
   "data_source_id": datasource,
   "query": """
+-- What is the breakdown of new (recently subscribed) vs. old (subscribed 1 or more years ago) customers?
+-- Most of our current subscribers became customers in 2016, with 2013-2015 close behind.
 
+SELECT year(to_date(registration_init_time,'yyyyMMdd')) AS registration_year,
+  count(*) AS members
+FROM kkbox.members
+GROUP BY registration_year
+HAVING registration_year >= 2010
 """,
-  "name": "",
-  "description": "",
+  "name": "Step5. Members by Registration Year",
+  "description": "Members by Registration Year",
 }
+
+# COMMAND ----------
+
+import requests
+response = requests.post(
+  'https://%s/api/2.0/preview/sql/queries' % (Workspace),
+  headers={'Authorization': 'Bearer %s' % Databricks_Token},
+  json=query5
+)
 
 # COMMAND ----------
 
 query6 = {
   "data_source_id": datasource,
   "query": """
+-- What number of user transactions are new subscriptions vs. renewals vs. cancellations?
+-- The data below indicates that we have a healthy renewal and new subscriber rate, however our churn rate seems to be increasing.
 
+WITH member_transactions AS (
+  SELECT date_format(to_date(m.registration_init_time,'yyyyMMdd'),'y-MM') AS registration_month,
+    date_format(to_date(transaction_date,'yyyyMMdd'),'y-MM') AS transaction_month,
+    is_auto_renew, is_cancel
+  FROM kkbox.transactions t JOIN kkbox.members m ON (t.msno = m.msno)
+  )
+SELECT 
+  transaction_month, 
+  sum(is_cancel) cancellations, 
+  sum(is_auto_renew) renewals, 
+  sum(CASE WHEN is_cancel = 0 AND is_auto_renew = 0 THEN 1 ELSE 0 END) AS new_subscriptions
+FROM member_transactions
+GROUP BY transaction_month
+ORDER BY transaction_month ASC
 """,
-  "name": "",
-  "description": "",
+  "name": "Step6. Breakdown of Monthly Renewals, Cancellations and New Subscriptions",
+  "description": "Breakdown of Monthly Renewals, Cancellations and New Subscriptions",
 }
+
+# COMMAND ----------
+
+import requests
+response = requests.post(
+  'https://%s/api/2.0/preview/sql/queries' % (Workspace),
+  headers={'Authorization': 'Bearer %s' % Databricks_Token},
+  json=query6
+)
 
 # COMMAND ----------
 
 query7 = {
   "data_source_id": datasource,
   "query": """
+-- What is the distribution of payment amount among our subscribers
+-- Does subscriber location impact the payment amount?  Create a box plot to visualize the data
+-- As shown below, the location of our subscribers seems to have an effect on the amount paid and subscription length. 
+-- Perhaps we can focus our marketing efforts in higher revenue locations.
 
+SELECT city, int(actual_amount_paid) 
+FROM kkbox.transactions t JOIN kkbox.members m ON (t.msno = m.msno)
 """,
-  "name": "",
-  "description": "",
+  "name": "Step7. Distribution of Payment",
+  "description": "Distribution of Payment",
 }
+
+# COMMAND ----------
+
+import requests
+response = requests.post(
+  'https://%s/api/2.0/preview/sql/queries' % (Workspace),
+  headers={'Authorization': 'Bearer %s' % Databricks_Token},
+  json=query7
+)
 
 # COMMAND ----------
 
 query8 = {
   "data_source_id": datasource,
   "query": """
+-- What is the distribution of daily listening time among our subscribers? Does subscriber location impact the listening time?
+-- Histograms are useful in understanding the distribution of a particular attribute in the data. We we below that 1) the listening time has a long tail distribution and 2) the location of the subscriber does not drasitically change the distribution.
 
+SELECT city, 
+  int(total_secs) AS listening_time 
+FROM kkbox.user_log l 
+  JOIN kkbox.members m ON (l.msno = m.msno) 
+WHERE total_secs < 50000
 """,
-  "name": "",
-  "description": "",
+  "name": "Step8. Distribution of Daily Listening",
+  "description": "Distribution of Daily Listening",
 }
+
+# COMMAND ----------
+
+import requests
+response = requests.post(
+  'https://%s/api/2.0/preview/sql/queries' % (Workspace),
+  headers={'Authorization': 'Bearer %s' % Databricks_Token},
+  json=query8
+)
 
 # COMMAND ----------
 
 query9 = {
   "data_source_id": datasource,
   "query": """
+-- Do subscribers who have been customers for a longer time use the platform more? 
+-- Does it impact their likelihood to renew their subscription?
+-- Below we see that there is more activity from younger customers (ie. those that have been subscribers for 5 years or less), 
+-- but there does not appear to be any relationship with the listening time or subscriber days to whether a subscriber will cancel their subscription.
 
+WITH churned_subscribers AS (
+SELECT DISTINCT msno, is_cancel churned FROM kkbox.transactions
+)
+SELECT l.msno, churned,
+  datediff(to_date(l.date,'yyyyMMdd'),to_date(m.registration_init_time,'yyyyMMdd')) AS days_subscriber,
+  avg(l.total_secs) AS daily_listen_time
+FROM kkbox.user_log l JOIN kkbox.members m ON (l.msno = m.msno)
+  JOIN churned_subscribers c ON (l.msno = c.msno)
+GROUP BY l.msno, days_subscriber, churned
 """,
-  "name": "",
-  "description": "",
+  "name": "Step9. Likelihood to Renew their Subscription",
+  "description": "Likelihood to Renew their Subscription",
 }
 
 # COMMAND ----------
 
-query10 = {
-  "data_source_id": datasource,
-  "query": """
-
-""",
-  "name": "",
-  "description": "",
-}
+import requests
+response = requests.post(
+  'https://%s/api/2.0/preview/sql/queries' % (Workspace),
+  headers={'Authorization': 'Bearer %s' % Databricks_Token},
+  json=query9
+)
