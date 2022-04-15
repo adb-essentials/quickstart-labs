@@ -16,7 +16,10 @@ print(BLOB_ACCOUNT)
 # COMMAND ----------
 
 # DBTITLE 1,Run this step only if you are re-running the notebook
-dbutils.fs.unmount("/mnt/adbquickstart")
+try:
+    dbutils.fs.unmount("/mnt/adbquickstart")
+except:
+  print("The storage isn't mounted so there is nothing to unmount.")
 
 # COMMAND ----------
 
