@@ -258,11 +258,6 @@ user_logs_bronze = spark.read.format("delta").load('/mnt/adbquickstart/bronze/us
 
 # COMMAND ----------
 
-# MAGIC %sql
-# MAGIC drop table if exists kkbox.members_gold
-
-# COMMAND ----------
-
 # DBTITLE 1,Members by Registration Year - Create a Gold table
 import pyspark.sql.functions as f
 members_transform = members_bronze.withColumn('years',members_bronze['registration_init_time'].substr(1, 4))
@@ -557,4 +552,4 @@ display(member_dummy)
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC ANALYZE TABLE kkbox.members_gold COMPUTE STATISTICS;
+# MAGIC ANALYZE TABLE kkbox.user_log COMPUTE STATISTICS;
