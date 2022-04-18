@@ -220,7 +220,7 @@ dfBronze.writeStream \
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC COPY INTO delta.`/mnt/adbquickstart/bronze/user_logs/`
+# MAGIC COPY INTO delta.`/mnt/adbquickstart/bronze/user_log/`
 # MAGIC     FROM '/mnt/adbquickstart/user_logs/'
 # MAGIC     FILEFORMAT = CSV
 # MAGIC     FORMAT_OPTIONS('header' = 'true')
@@ -230,7 +230,7 @@ dfBronze.writeStream \
 # MAGIC %sql
 # MAGIC CREATE TABLE kkbox.user_log
 # MAGIC USING DELTA 
-# MAGIC LOCATION '/mnt/adbquickstart/bronze/user_logs'
+# MAGIC LOCATION '/mnt/adbquickstart/bronze/user_log'
 
 # COMMAND ----------
 
@@ -243,7 +243,7 @@ dfBronze.writeStream \
 ## Read the Bronze Data
 transactions_bronze = spark.read.format("delta").load('/mnt/adbquickstart/bronze/transactions/')
 members_bronze = spark.read.format("delta").load('/mnt/adbquickstart/bronze/members/')
-user_logs_bronze = spark.read.format("delta").load('/mnt/adbquickstart/bronze/user_logs/')
+user_logs_bronze = spark.read.format("delta").load('/mnt/adbquickstart/bronze/user_log/')
 
 # COMMAND ----------
 
