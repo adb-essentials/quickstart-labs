@@ -14,12 +14,14 @@
 dbutils.widgets.text("ACCOUNT_KEY", "", "ACCOUNT_KEY")
 dbutils.widgets.text("BLOB_CONTAINER", "", "BLOB_CONTAINER")
 dbutils.widgets.text("BLOB_ACCOUNT", "", "BLOB_ACCOUNT")
+dbutils.widgets.text("Databricks_Token", "", "Databricks_Token")
 
 # COMMAND ----------
 
 BLOB_CONTAINER = dbutils.widgets.get("BLOB_CONTAINER")
 BLOB_ACCOUNT = dbutils.widgets.get("BLOB_ACCOUNT")
 ACCOUNT_KEY = dbutils.widgets.get("ACCOUNT_KEY")
+Databricks_Token = dbutils.widgets.get("Databricks_Token")
 
 # COMMAND ----------
 

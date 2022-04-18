@@ -1,5 +1,12 @@
 # Databricks notebook source
-Databricks_Token = dbutils.notebook.entry_point.getDbutils().notebook().getContext().apiToken().getOrElse(None)
+dbutils.widgets.text("Databricks_Token", "", "Databricks_Token")
+
+# COMMAND ----------
+
+Databricks_Token = dbutils.widgets.get("Databricks_Token")
+
+# COMMAND ----------
+
 Workspace = dbutils.notebook.entry_point.getDbutils().notebook().getContext().tags().get("browserHostName").getOrElse(None)
 
 # COMMAND ----------

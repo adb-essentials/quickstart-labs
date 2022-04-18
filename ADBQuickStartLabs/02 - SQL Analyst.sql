@@ -17,38 +17,63 @@
 
 -- COMMAND ----------
 
--- MAGIC %python
+-- MAGIC %py
 -- MAGIC dbutils.widgets.text("ACCOUNT_KEY", "", "ACCOUNT_KEY")
 -- MAGIC dbutils.widgets.text("BLOB_CONTAINER", "", "BLOB_CONTAINER")
 -- MAGIC dbutils.widgets.text("BLOB_ACCOUNT", "", "BLOB_ACCOUNT")
+-- MAGIC dbutils.widgets.text("Databricks_Token", "", "Databricks_Token")
 
 -- COMMAND ----------
 
--- MAGIC %python
+-- MAGIC %md
+-- MAGIC ##Obtain a Personal Access Token and save it to the Databricks_Token widget  
+-- MAGIC 1.Navigate to Settings -> User Settings  
+-- MAGIC <img src="https://publicimg.blob.core.windows.net/images/PAT1.png" width="400">
+-- MAGIC 
+-- MAGIC 2.Under Access tokens -> Click Generate new token  
+-- MAGIC <img src="https://publicimg.blob.core.windows.net/images/PAT2.png" width="300">
+-- MAGIC 
+-- MAGIC 3.Enter an optional description under comment -> Click Generate  
+-- MAGIC <img src="https://publicimg.blob.core.windows.net/images/PAT3.png" width="400">
+-- MAGIC 
+-- MAGIC 4.Copy your token value to the clipboard -> Click Done  
+-- MAGIC <img src="https://publicimg.blob.core.windows.net/images/PAT4.png" width="400">
+-- MAGIC 
+-- MAGIC 5.Save your token value to the Databricks_Token widget  
+-- MAGIC <img src="https://publicimg.blob.core.windows.net/images/PAT5.png" width="600">
+-- MAGIC 
+-- MAGIC You'll use the Databricks_Token again in the next lab
+
+-- COMMAND ----------
+
+-- MAGIC %py
 -- MAGIC BLOB_CONTAINER = dbutils.widgets.get("BLOB_CONTAINER")
 -- MAGIC BLOB_ACCOUNT = dbutils.widgets.get("BLOB_ACCOUNT")
 -- MAGIC ACCOUNT_KEY = dbutils.widgets.get("ACCOUNT_KEY")
+-- MAGIC Databricks_Token = dbutils.widgets.get("Databricks_Token")
 
 -- COMMAND ----------
 
 -- DBTITLE 1,Mount Blob Storage to DBFS
-run = dbutils.notebook.run('./00 - Setup Storage', 60, {"BLOB_CONTAINER" : BLOB_CONTAINER,"BLOB_ACCOUNT" : BLOB_ACCOUNT,"ACCOUNT_KEY" : ACCOUNT_KEY })
+-- MAGIC %py
+-- MAGIC run = dbutils.notebook.run('./00 - Setup Storage', 60, {"BLOB_CONTAINER" : BLOB_CONTAINER,"BLOB_ACCOUNT" : BLOB_ACCOUNT,"ACCOUNT_KEY" : ACCOUNT_KEY })
 
 -- COMMAND ----------
 
-# delete the old database and tables if needed
-_ = spark.sql('DROP DATABASE IF EXISTS kkbox CASCADE')
-
-# drop any old delta lake files that might have been created
-dbutils.fs.rm('/mnt/adbquickstart/bronze', recurse=True)
-dbutils.fs.rm('/mnt/adbquickstart/gold', recurse=True)
-dbutils.fs.rm('/mnt/adbquickstart/silver', recurse=True)
-dbutils.fs.rm('/mnt/adbquickstart/checkpoint', recurse=True)
+-- MAGIC %py
+-- MAGIC # delete the old database and tables if needed
+-- MAGIC _ = spark.sql('DROP DATABASE IF EXISTS kkbox CASCADE')
+-- MAGIC 
+-- MAGIC # drop any old delta lake files that might have been created
+-- MAGIC dbutils.fs.rm('/mnt/adbquickstart/bronze', recurse=True)
+-- MAGIC dbutils.fs.rm('/mnt/adbquickstart/gold', recurse=True)
+-- MAGIC dbutils.fs.rm('/mnt/adbquickstart/silver', recurse=True)
+-- MAGIC dbutils.fs.rm('/mnt/adbquickstart/checkpoint', recurse=True)
 
 -- COMMAND ----------
 
 -- DBTITLE 1,Create Lab Queries
--- MAGIC %run "../ADBQuickStartLabs/00 - Create Queries"
+-- MAGIC %run "../ADBQuickStartLabs/00 - Create Queries" $Databricks_Token = $Databricks_Token
 
 -- COMMAND ----------
 
