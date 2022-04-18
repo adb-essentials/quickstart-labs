@@ -32,7 +32,7 @@ CREATE DATABASE IF NOT EXISTS kkbox;
 
 -- Copy Into
 COPY INTO delta.`/mnt/adbquickstart/bronze/user_log/`
-    FROM (SELECT msno::STRING, date:STRING, num_25::INT, num_50::STRING, num_75::INT, num_985::INT, num_100::INT, num_unq::INT, total_secs::DOUBLE
+    FROM (SELECT msno::STRING, date::STRING, num_25::INT, num_50::STRING, num_75::INT, num_985::INT, num_100::INT, num_unq::INT, total_secs::DOUBLE
           FROM 'dbfs:/mnt/adbquickstart/user_logs/user_logs_v2.csv')
     FILEFORMAT = CSV
     FORMAT_OPTIONS('header' = 'true',  'dateFormat' = 'yyyyMMdd');
