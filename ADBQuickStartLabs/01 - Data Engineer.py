@@ -119,7 +119,7 @@ transaction_schema = StructType([
 transactions = (
   spark
     .read
-    .csv(
+    .parquet(
       '/mnt/adbquickstart/transactions',
       schema=transaction_schema,
       header=True,
