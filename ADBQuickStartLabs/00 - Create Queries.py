@@ -40,7 +40,7 @@ COPY INTO delta.`/mnt/adbquickstart/bronze/user_log/`
 CREATE TABLE kkbox.user_log USING DELTA LOCATION '/mnt/adbquickstart/bronze/user_log/';
     
 COPY INTO delta.`/mnt/adbquickstart/bronze/transactions/`
-    FROM (SELECT msno::STRING, payment_method_id::INT, payment_plan_days::INT, plan_list_price::INT, actual_amount_paid::INT, is_auto_renew::INT, transaction_date::DATE, membership_expire_date::DATE, is_cancel::INT
+    FROM (SELECT msno::STRING, payment_method_id::INT, payment_plan_days::INT, plan_list_price::INT, actual_amount_paid::INT, is_auto_renew::INT, transaction_date::STRING, membership_expire_date::STRING, is_cancel::INT
           FROM '/mnt/adbquickstart/transactions_v2.csv')
     FILEFORMAT = CSV
     FORMAT_OPTIONS('header' = 'true',  'dateFormat' = 'yyyyMMdd');
