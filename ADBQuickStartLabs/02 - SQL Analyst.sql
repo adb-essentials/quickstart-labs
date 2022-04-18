@@ -129,9 +129,9 @@
 -- COMMAND ----------
 
 -- MAGIC %md
--- MAGIC ### The SQL Editor is powerful SQL IDE built directly into Databricks SQL
+-- MAGIC ### The SQL Editor is a powerful SQL IDE built directly into Databricks SQL
 -- MAGIC Browse and search for schema and table objects, view metadata, and explore tables/views  
--- MAGIC Use functionality like intellisense, view past execution history, create data visualization capabilities, and even download data  
+-- MAGIC Use functionality like intellisense, view past query execution history, create data visualization capabilities, and even download data  
 -- MAGIC 
 -- MAGIC <img src="https://publicimg.blob.core.windows.net/images/DBSQL5.png" width="500">
 
