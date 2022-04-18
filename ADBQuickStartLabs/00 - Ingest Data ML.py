@@ -70,7 +70,7 @@ member_schema = StructType([
   StructField('bd', IntegerType()),
   StructField('gender', StringType()),
   StructField('registered_via', IntegerType()),
-  StructField('registration_init_time', DateType())
+  StructField('registration_init_time', StringType())
   ])
 
 # read data from csv
