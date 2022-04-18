@@ -48,7 +48,7 @@ COPY INTO delta.`/mnt/adbquickstart/bronze/transactions/`
 CREATE TABLE kkbox.transactions USING DELTA LOCATION '/mnt/adbquickstart/bronze/transactions/';
 
 COPY INTO delta.`/mnt/adbquickstart/bronze/members`
-    FROM (SELECT msno::STRING, city::INT, bd::INT, gender::STRING, registered_via::INT, registration_init_time::DATE
+    FROM (SELECT msno::STRING, city::INT, bd::INT, gender::STRING, registered_via::INT, registration_init_time::STRING
           FROM 'dbfs:/mnt/adbquickstart/members/members_v3.csv')
     FILEFORMAT = CSV
     FORMAT_OPTIONS('header' = 'true',  'dateFormat' = 'yyyyMMdd');
