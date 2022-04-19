@@ -152,7 +152,7 @@ display(data)
 
 # DBTITLE 1,Inference Data Cleaning and Feature Engineering
 # Create a Feature Days a userhas been on platform
-churn_data =  data.withColumn("DaysOnBoard",datediff(to_date(data['membership_expire_date'], 'yyyyMMdd'),data['registration_init_time']))
+churn_data =  data.withColumn("DaysOnBoard",datediff(to_date(data['membership_expire_date'], 'yyyyMMdd'),(to_date(data['registration_init_time'], 'yyyyMMdd'))))
 #Find out if there was a discount provided to the user
 churn_data = churn_data.withColumn("Discount", churn_data['actual_amount_paid']-churn_data['plan_list_price'])
 #churn_data.where("Discount > 0").show()
