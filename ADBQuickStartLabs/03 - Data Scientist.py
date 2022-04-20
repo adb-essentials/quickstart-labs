@@ -1,7 +1,7 @@
 # Databricks notebook source
 # MAGIC %md
 # MAGIC # Azure Databricks Quickstart for Data Scientist
-# MAGIC Welcome to the quickstart lab for data analysts on Azure Databricks! Over the course of this notebook, you will use a real-world dataset and learn how to:
+# MAGIC Welcome to the quickstart lab for data scientists on Azure Databricks! Over the course of this notebook, you will use a real-world dataset and learn how to:
 # MAGIC 1. Access your enterprise data lake in Azure using Databricks
 # MAGIC 2. Develop Machine Learning Model 
 # MAGIC 3. Use MLFlow for end-to-end model management and lifecycle
@@ -487,7 +487,7 @@ spark.sql('''
 # MAGIC %md
 # MAGIC Navigate to the model in the model registry
 # MAGIC 
-# MAGIC <img src="https://publicimg.blob.core.windows.net/images/Serving0.png" width="1400">
+# MAGIC <img src="https://publicimg.blob.core.windows.net/images/Serving0.png" width="800">
 
 # COMMAND ----------
 
