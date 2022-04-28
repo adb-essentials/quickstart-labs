@@ -1,4 +1,9 @@
 # Databricks notebook source
+# MAGIC %md
+# MAGIC ### STOP do not run this notebook individually. This notebook will be executed from parent notebooks at the proper time. 
+
+# COMMAND ----------
+
 # DBTITLE 1,Delete existing files
 # delete the old database and tables if needed
 _ = spark.sql('DROP DATABASE IF EXISTS kkbox CASCADE')

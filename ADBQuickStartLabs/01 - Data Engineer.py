@@ -31,12 +31,12 @@ ACCOUNT_KEY = dbutils.widgets.get("ACCOUNT_KEY")
 # COMMAND ----------
 
 # DBTITLE 1,Mount Blob Storage to DBFS
-run = dbutils.notebook.run('./00 - Setup Storage', 60, {"BLOB_CONTAINER" : BLOB_CONTAINER,"BLOB_ACCOUNT" : BLOB_ACCOUNT,"ACCOUNT_KEY" : ACCOUNT_KEY })
+run = dbutils.notebook.run('./Setup Notebooks/00 - Setup Storage', 60, {"BLOB_CONTAINER" : BLOB_CONTAINER,"BLOB_ACCOUNT" : BLOB_ACCOUNT,"ACCOUNT_KEY" : ACCOUNT_KEY })
 
 # COMMAND ----------
 
 # DBTITLE 1,Install libraries
-# MAGIC %run "../ADBQuickStartLabs/00 - Libraries Setup"
+# MAGIC %run "../ADBQuickStartLabs/Setup Notebooks/00 - Libraries Setup"
 
 # COMMAND ----------
 
@@ -57,8 +57,9 @@ _ = spark.sql('CREATE DATABASE kkbox')
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC #DATA ENGINEERING AND STREAMING ARCHITECTURE
-# MAGIC <img src="https://kpistoropen.blob.core.windows.net/collateral/quickstart/etl.png" width=1500>
+# MAGIC <!-- #DATA ENGINEERING AND STREAMING ARCHITECTURE -->
+# MAGIC <!-- <img src="https://kpistoropen.blob.core.windows.net/collateral/quickstart/etl.png" width=1500> -->
+# MAGIC <img src="https://publicimg.blob.core.windows.net/images/DE and Streaming.png" width="1200">
 
 # COMMAND ----------
 
@@ -258,6 +259,14 @@ user_logs_bronze = spark.read.format("delta").load('/mnt/adbquickstart/bronze/us
 
 # COMMAND ----------
 
+# MAGIC %sql DROP TABLE IF EXISTS kkbox.members_gold
+
+# COMMAND ----------
+
+# dbutils.fs.rm("/mnt/adbquickstart/gold/members/",recurse=True)
+
+# COMMAND ----------
+
 # DBTITLE 1,Members by Registration Year - Create a Gold table
 import pyspark.sql.functions as f
 members_transform = members_bronze.withColumn('years',members_bronze['registration_init_time'].substr(1, 4))
@@ -270,12 +279,6 @@ members_gold.createOrReplaceTempView("member_gold")
 
 # members_gold.write.format('delta').mode('overwrite').save('/mnt/adbquickstart/gold/members/')
 members_gold.write.format('delta').mode('overwrite').option('path', '/mnt/adbquickstart/gold/members/').saveAsTable('kkbox.members_gold')
-
-spark.sql('''
-  CREATE TABLE IF NOT EXISTS kkbox.members_gold
-  USING DELTA 
-  LOCATION '/mnt/adbquickstart/gold/members/'
-  ''')
 
 display(members_gold)
 
@@ -475,6 +478,37 @@ display(member_dummy)
 # MAGIC %sql
 # MAGIC SELECT * FROM kkbox.members_gold VERSION AS OF 0
 # MAGIC order by years
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### I can even roll back my table
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC RESTORE TABLE kkbox.members_gold TO VERSION AS OF 9
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC SELECT * FROM kkbox.members_gold
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### Or even back shallow or deep clones of a table (backups or testing tables)
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC CREATE OR REPLACE TABLE delta.`/mnt/adbquickstart/gold/members_back/`
+# MAGIC DEEP CLONE delta.`/mnt/adbquickstart/gold/members/`
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC SELECT * FROM delta.`/mnt/adbquickstart/gold/members_back/`
 
 # COMMAND ----------
 

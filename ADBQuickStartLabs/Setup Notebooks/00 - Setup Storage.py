@@ -1,4 +1,9 @@
 # Databricks notebook source
+# MAGIC %md
+# MAGIC ### STOP do not run this notebook individually. This notebook will be executed from parent notebooks at the proper time. 
+
+# COMMAND ----------
+
 dbutils.widgets.text("ACCOUNT_KEY", "", "ACCOUNT_KEY")
 dbutils.widgets.text("BLOB_CONTAINER", "", "BLOB_CONTAINER")
 dbutils.widgets.text("BLOB_ACCOUNT", "", "BLOB_ACCOUNT")
@@ -27,7 +32,7 @@ except:
 # MAGIC ### Mounting Azure Storage using an Access Key or Service Principal
 # MAGIC We will mount an Azure blob storage container to the workspace using a shared Access Key. More instructions can be found [here](https://docs.microsoft.com/en-us/azure/databricks/data/data-sources/azure/azure-storage#--mount-azure-blob-storage-containers-to-dbfs). 
 # MAGIC 
-# MAGIC #####Note: For this Demo we are using access Key and mounting the blob on DBFS. Ideally one should authenticate using Service Principal and use full abfss path to access data
+# MAGIC #####Note: For this Demo we are using access Key and mounting the blob on DBFS. Ideally one should authenticate using Service Principal and use abfss driver and full path to access data
 
 # COMMAND ----------
 

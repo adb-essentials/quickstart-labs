@@ -1,4 +1,9 @@
 # Databricks notebook source
+# MAGIC %md
+# MAGIC ### STOP, do not run this notebook individually. This notebook will be executed from parent notebooks at the proper time. 
+
+# COMMAND ----------
+
 dbutils.widgets.text("Databricks_Token", "", "Databricks_Token")
 
 # COMMAND ----------
@@ -81,6 +86,15 @@ ANALYZE TABLE kkbox.transactions COMPUTE STATISTICS;
 ANALYZE TABLE kkbox.members COMPUTE STATISTICS;
 
 ANALYZE TABLE kkbox.user_log COMPUTE STATISTICS; 
+
+-- Cache our tables to the result set cache
+SELECT * FROM kkbox.churn;
+
+SELECT * FROM kkbox.transactions;
+
+SELECT * FROM kkbox.members;
+
+SELECT * FROM kkbox.user_log; 
   """,
   "name": "Step 0. Copy Into, Optimize, and Analyze",
   "description": "Create Database, Tables, and run optimizations.",

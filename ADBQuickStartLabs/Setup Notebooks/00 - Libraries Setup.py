@@ -1,4 +1,9 @@
 # Databricks notebook source
+# MAGIC %md
+# MAGIC ### STOP do not run this notebook individually. This notebook will be executed from parent notebooks at the proper time. 
+
+# COMMAND ----------
+
 import shutil
 from pyspark.sql.types import *
 from pyspark.sql.functions import *

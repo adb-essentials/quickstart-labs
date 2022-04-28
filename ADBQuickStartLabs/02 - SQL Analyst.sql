@@ -56,7 +56,7 @@
 
 -- DBTITLE 1,Mount Blob Storage to DBFS
 -- MAGIC %py
--- MAGIC run = dbutils.notebook.run('./00 - Setup Storage', 60, {"BLOB_CONTAINER" : BLOB_CONTAINER,"BLOB_ACCOUNT" : BLOB_ACCOUNT,"ACCOUNT_KEY" : ACCOUNT_KEY })
+-- MAGIC run = dbutils.notebook.run('./Setup Notebooks/00 - Setup Storage', 60, {"BLOB_CONTAINER" : BLOB_CONTAINER,"BLOB_ACCOUNT" : BLOB_ACCOUNT,"ACCOUNT_KEY" : ACCOUNT_KEY })
 
 -- COMMAND ----------
 
@@ -73,7 +73,7 @@
 -- COMMAND ----------
 
 -- DBTITLE 1,Create Lab Queries
--- MAGIC %run "../ADBQuickStartLabs/00 - Create Queries" $Databricks_Token = $Databricks_Token
+-- MAGIC %run "../ADBQuickStartLabs/Setup Notebooks/00 - Create Queries" $Databricks_Token = $Databricks_Token
 
 -- COMMAND ----------
 

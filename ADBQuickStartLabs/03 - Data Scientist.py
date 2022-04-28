@@ -26,23 +26,24 @@ Databricks_Token = dbutils.widgets.get("Databricks_Token")
 # COMMAND ----------
 
 # DBTITLE 1,Mount Blob Storage to DBFS
-run = dbutils.notebook.run('./00 - Setup Storage', 60, {"BLOB_CONTAINER" : BLOB_CONTAINER,"BLOB_ACCOUNT" : BLOB_ACCOUNT,"ACCOUNT_KEY" : ACCOUNT_KEY })
+run = dbutils.notebook.run('./Setup Notebooks/00 - Setup Storage', 60, {"BLOB_CONTAINER" : BLOB_CONTAINER,"BLOB_ACCOUNT" : BLOB_ACCOUNT,"ACCOUNT_KEY" : ACCOUNT_KEY })
 
 # COMMAND ----------
 
 # DBTITLE 1,Install Libraries
-# MAGIC %run "../ADBQuickStartLabs/00 - Libraries Setup"
+# MAGIC %run "../ADBQuickStartLabs/Setup Notebooks/00 - Libraries Setup"
 
 # COMMAND ----------
 
 # DBTITLE 1,Ingest Datasets
-# MAGIC %run "../ADBQuickStartLabs/00 - Ingest Data ML"
+# MAGIC %run "../ADBQuickStartLabs/Setup Notebooks/00 - Ingest Data ML"
 
 # COMMAND ----------
 
 # DBTITLE 0,ML Architecture
 # MAGIC %md
-# MAGIC <img src="https://publicimg.blob.core.windows.net/images/DS.png" width="1200">
+# MAGIC <!-- <img src="https://publicimg.blob.core.windows.net/images/DS.png" width="1200"> -->
+# MAGIC <img src="https://publicimg.blob.core.windows.net/images/DatabricksML.png" width="1200">
 
 # COMMAND ----------
 
