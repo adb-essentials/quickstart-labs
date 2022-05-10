@@ -123,8 +123,6 @@ transactions = (
     .parquet(
       '/mnt/adbquickstart/transactions',
       schema=transaction_schema,
-      header=True,
-      dateFormat='yyyyMMdd'
       )
     )
 

@@ -76,15 +76,40 @@ COMMENT "Clean, merged members";
 
 APPLY CHANGES INTO LIVE.user_logs_silver
 FROM stream(LIVE.user_logs_bronze_clean_v)
-  KEYS (msno)
+  KEYS (msno, date)
   SEQUENCE BY date --auto-incremental ID to identity order of events
   COLUMNS * EXCEPT (_rescued_data);
 
 -- COMMAND ----------
 
+CREATE OR REFRESH TEMPORARY STREAMING LIVE TABLE transactions_bronze_clean_v(
+  CONSTRAINT msno_nullcheck EXPECT (msno IS NOT NULL) ON VIOLATION DROP ROW,
+  CONSTRAINT transaction_date_nullcheck EXPECT (transaction_date IS NOT NULL) ON VIOLATION DROP ROW
+)
+TBLPROPERTIES ("quality" = "silver")
+COMMENT "Cleansed bronze user logs view (i.e. what will become Silver)"
+AS SELECT * 
+FROM STREAM(LIVE.transactions_bronze);
+
+-- COMMAND ----------
+
+CREATE OR REFRESH STREAMING LIVE TABLE transactions_silver
+TBLPROPERTIES ("quality" = "silver")
+COMMENT "Clean, merged members";
+
+-- COMMAND ----------
+
+APPLY CHANGES INTO LIVE.transactions_silver
+FROM stream(LIVE.transactions_bronze_clean_v)
+  KEYS (msno, transaction_date, membership_expire_date)
+  SEQUENCE BY transaction_date --auto-incremental ID to identity order of events
+; 
+
+-- COMMAND ----------
+
 CREATE OR REFRESH LIVE TABLE dim_member
 (members_sk BIGINT GENERATED ALWAYS AS IDENTITY, 
- member_nm_nk STRING,
+ member_num_nk STRING,
  city_cd INT,
  age INT,
  gender STRING,
@@ -96,7 +121,7 @@ COMMENT "Members dimensions"
 TBLPROPERTIES ("quality" = "gold")
 AS
 SELECT 
- msno AS member_nm_nk,
+ msno AS member_num_nk,
  city AS city_cd,
  bd AS age,
  CASE WHEN ISNULL(gender) THEN "" ELSE gender END AS gender,
@@ -124,22 +149,47 @@ FROM live.date_staging
 
 -- COMMAND ----------
 
-
+CREATE OR REFRESH LIVE TABLE fact_transactions (
+  CONSTRAINT members_fk_isnull EXPECT (members_fk IS NOT NULL AND members_fk > 0)
+)
+COMMENT "transactions fact"
+TBLPROPERTIES ("quality" = "gold")
+AS 
+SELECT 
+t.transaction_date AS transaction_date_fk,
+t.membership_expire_date AS membership_expire_date_fk,
+CASE WHEN ISNULL(m.members_sk) THEN 0 ELSE m.members_sk END as members_fk,
+t.msno,
+t.payment_method_id,
+t.payment_plan_days,
+t.plan_list_price,
+t.plan_list_price - t.actual_amount_paid AS discount_applied,
+t.actual_amount_paid,
+CAST(t.is_auto_renew AS BOOLEAN) AS is_auto_renew,
+CAST(t.is_cancel AS BOOLEAN) AS is_cancel
+FROM 
+live.transactions_silver t
+LEFT OUTER JOIN live.dim_member m ON t.msno = m.member_num_nk
 
 -- COMMAND ----------
 
--- SELECT * FROM dlt_leo.transactions_landing 
-
--- COMMAND ----------
-
--- DROP DATABASE dlt_leo CASCADE
-
--- COMMAND ----------
-
--- SELECT COUNT(1) FROM dlt_leo.members_bronze--6,769,473
-
--- SELECT COUNT(DISTINCT MSNO) FROM dlt_leo.members_bronze--6,769,473
-
--- COMMAND ----------
-
--- SELECT * FROM dlt_leo.user_logs_landing
+CREATE OR REFRESH LIVE TABLE fact_user_logs (
+  CONSTRAINT members_fk_isnull EXPECT (members_fk IS NOT NULL AND members_fk > 0)
+)
+COMMENT "user logs fact"
+TBLPROPERTIES ("quality" = "gold")
+AS 
+SELECT 
+t.date AS transaction_date_fk,
+CASE WHEN ISNULL(m.members_sk) THEN 0 ELSE m.members_sk END as members_fk,
+t.msno,
+t.num_25  AS Num_Songs_Less_25_Percent_SongLength,
+t.num_50  AS Num_Songs_Less_50_Percent_SongLength,
+t.num_75  AS Num_Songs_Less_75_Percent_SongLength,
+t.num_985 AS Num_Songs_Less_98_Percent_SongLength,
+t.num_100 AS Num_Songs_to_100_Percent_SongLength,
+t.num_unq AS Unique_Songs_Played,
+t.total_secs AS Total_Seconds_Played
+FROM 
+live.user_logs_silver t
+LEFT OUTER JOIN live.dim_member m ON t.msno = m.member_num_nk
