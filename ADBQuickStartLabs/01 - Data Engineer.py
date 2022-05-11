@@ -120,9 +120,9 @@ transaction_schema = StructType([
 transactions = (
   spark
     .read
+    .schema(transaction_schema),
     .parquet(
-      '/mnt/adbquickstart/transactions',
-      schema=transaction_schema,
+      '/mnt/adbquickstart/transactions'
       )
     )
 

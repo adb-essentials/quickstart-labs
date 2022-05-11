@@ -1,4 +1,9 @@
 -- Databricks notebook source
+-- MAGIC %md
+-- MAGIC ### Bronze Zone
+
+-- COMMAND ----------
+
 CREATE LIVE VIEW date_staging
 AS
 select explode(sequence(to_date('2019-01-01'), to_date('2020-12-31'), interval 1 day)) as calendarDate
@@ -30,6 +35,11 @@ SELECT *
             "header", "true"
             )
         )
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC ### Silver Zone Merge
 
 -- COMMAND ----------
 
@@ -104,6 +114,11 @@ FROM stream(LIVE.transactions_bronze_clean_v)
   KEYS (msno, transaction_date, membership_expire_date)
   SEQUENCE BY transaction_date --auto-incremental ID to identity order of events
 ; 
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC ### Gold Zone - Star Schema for Power BI
 
 -- COMMAND ----------
 
