@@ -6,7 +6,7 @@
 
 CREATE LIVE VIEW date_staging
 AS
-select explode(sequence(to_date('2019-01-01'), to_date('2020-12-31'), interval 1 day)) as calendarDate
+select explode(sequence(to_date('2004-01-01'), to_date('2020-12-31'), interval 1 day)) as calendarDate
 
 -- COMMAND ----------
 
@@ -133,7 +133,7 @@ CREATE OR REFRESH LIVE TABLE dim_member
 CONSTRAINT registration_date_nullcheck EXPECT (registration_date IS NOT NULL) ON VIOLATION DROP ROW
 )
 COMMENT "Members dimensions"
-TBLPROPERTIES ("quality" = "gold")
+TBLPROPERTIES ("quality" = "gold", "pipelines.autoOptimize.managed" = "true", "pipelines.autoOptimize.zOrderCols" = "members_sk,member_num_nk,registration_date")
 AS
 SELECT 
  msno AS member_num_nk,
@@ -148,7 +148,7 @@ FROM live.members_silver
 
 CREATE OR REFRESH LIVE TABLE dim_date
 COMMENT "Date dimensions"
-TBLPROPERTIES ("quality" = "gold")
+TBLPROPERTIES ("quality" = "gold", "pipelines.autoOptimize.managed" = "true", "pipelines.autoOptimize.zOrderCols" = "DateInt,Date")
 AS 
 SELECT 
   year(calendarDate) * 10000 + month(calendarDate) * 100 + day(calendarDate) as DateInt,
@@ -168,7 +168,7 @@ CREATE OR REFRESH LIVE TABLE fact_transactions (
   CONSTRAINT members_fk_isnull EXPECT (members_fk IS NOT NULL AND members_fk > 0)
 )
 COMMENT "transactions fact"
-TBLPROPERTIES ("quality" = "gold")
+TBLPROPERTIES ("quality" = "gold", "pipelines.autoOptimize.managed" = "true", "pipelines.autoOptimize.zOrderCols" = "transaction_date_fk,members_fk")
 AS 
 SELECT 
 t.transaction_date AS transaction_date_fk,
@@ -176,12 +176,14 @@ t.membership_expire_date AS membership_expire_date_fk,
 CASE WHEN ISNULL(m.members_sk) THEN 0 ELSE m.members_sk END as members_fk,
 t.msno,
 t.payment_method_id,
-t.payment_plan_days,
-t.plan_list_price,
+CAST(t.payment_plan_days AS INT) AS payment_plan_days,
+CAST(t.plan_list_price AS DOUBLE) AS plan_list_price,
 t.plan_list_price - t.actual_amount_paid AS discount_applied,
-t.actual_amount_paid,
-CAST(t.is_auto_renew AS BOOLEAN) AS is_auto_renew,
-CAST(t.is_cancel AS BOOLEAN) AS is_cancel
+CAST(t.actual_amount_paid AS DOUBLE) AS actual_amount_paid,
+CAST(t.is_auto_renew AS BOOLEAN) AS is_auto_renew_flag,
+CAST(t.is_cancel AS BOOLEAN) AS is_cancel_flag,
+CAST(t.is_auto_renew AS INT) AS is_auto_renew_count,
+CAST(t.is_cancel AS INT) AS is_cancel_count
 FROM 
 live.transactions_silver t
 LEFT OUTER JOIN live.dim_member m ON t.msno = m.member_num_nk
@@ -192,7 +194,7 @@ CREATE OR REFRESH LIVE TABLE fact_user_logs (
   CONSTRAINT members_fk_isnull EXPECT (members_fk IS NOT NULL AND members_fk > 0)
 )
 COMMENT "user logs fact"
-TBLPROPERTIES ("quality" = "gold")
+TBLPROPERTIES ("quality" = "gold", "pipelines.autoOptimize.managed" = "true", "pipelines.autoOptimize.zOrderCols" = "transaction_date_fk,members_fk")
 AS 
 SELECT 
 t.date AS transaction_date_fk,
