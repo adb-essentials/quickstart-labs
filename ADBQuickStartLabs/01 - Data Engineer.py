@@ -103,27 +103,9 @@ _ = spark.sql('CREATE DATABASE kkbox')
 # COMMAND ----------
 
 # DBTITLE 1,Prep Transactions Dataset - Parquet Files to Delta
-# Define transaction dataset schema
-transaction_schema = StructType([
-  StructField('msno', StringType()),
-  StructField('payment_method_id', IntegerType()),
-  StructField('payment_plan_days', IntegerType()),
-  StructField('plan_list_price', IntegerType()),
-  StructField('actual_amount_paid', IntegerType()),
-  StructField('is_auto_renew', IntegerType()),
-  StructField('transaction_date', DateType()),
-  StructField('membership_expire_date', DateType()),
-  StructField('is_cancel', IntegerType())  
-  ])
-
 # Read data from parquet files
 transactions = (
-  spark
-    .read
-    .schema(transaction_schema),
-    .parquet(
-      '/mnt/adbquickstart/transactions'
-      )
+  spark.read.parquet('/mnt/adbquickstart/transactions')
     )
 
 # persist in delta lake format
