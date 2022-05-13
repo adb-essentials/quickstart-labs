@@ -133,7 +133,7 @@ CREATE OR REFRESH LIVE TABLE dim_member
 CONSTRAINT registration_date_nullcheck EXPECT (registration_date IS NOT NULL) ON VIOLATION DROP ROW
 )
 COMMENT "Members dimensions"
-TBLPROPERTIES ("quality" = "gold", "pipelines.autoOptimize.managed" = "true", "pipelines.autoOptimize.zOrderCols" = "members_sk,member_num_nk,registration_date")
+TBLPROPERTIES ("quality" = "gold", "delta.targetFileSize" = "32mb", "pipelines.autoOptimize.zOrderCols" = "members_sk,member_num_nk,registration_date")
 AS
 SELECT 
  msno AS member_num_nk,
@@ -148,7 +148,7 @@ FROM live.members_silver
 
 CREATE OR REFRESH LIVE TABLE dim_date
 COMMENT "Date dimensions"
-TBLPROPERTIES ("quality" = "gold", "pipelines.autoOptimize.managed" = "true", "pipelines.autoOptimize.zOrderCols" = "DateInt,Date")
+TBLPROPERTIES ("quality" = "gold", "delta.targetFileSize" = "32mb", "pipelines.autoOptimize.zOrderCols" = "DateInt,Date")
 AS 
 SELECT 
   year(calendarDate) * 10000 + month(calendarDate) * 100 + day(calendarDate) as DateInt,
@@ -168,7 +168,7 @@ CREATE OR REFRESH LIVE TABLE fact_transactions (
   CONSTRAINT members_fk_isnull EXPECT (members_fk IS NOT NULL AND members_fk > 0)
 )
 COMMENT "transactions fact"
-TBLPROPERTIES ("quality" = "gold", "pipelines.autoOptimize.managed" = "true", "pipelines.autoOptimize.zOrderCols" = "transaction_date_fk,members_fk")
+TBLPROPERTIES ("quality" = "gold", "delta.targetFileSize" = "32mb", "pipelines.autoOptimize.zOrderCols" = "transaction_date_fk,members_fk")
 AS 
 SELECT 
 t.transaction_date AS transaction_date_fk,
@@ -194,7 +194,7 @@ CREATE OR REFRESH LIVE TABLE fact_user_logs (
   CONSTRAINT members_fk_isnull EXPECT (members_fk IS NOT NULL AND members_fk > 0)
 )
 COMMENT "user logs fact"
-TBLPROPERTIES ("quality" = "gold", "pipelines.autoOptimize.managed" = "true", "pipelines.autoOptimize.zOrderCols" = "transaction_date_fk,members_fk")
+TBLPROPERTIES ("quality" = "gold", "delta.targetFileSize" = "32mb", "pipelines.autoOptimize.zOrderCols" = "transaction_date_fk,members_fk")
 AS 
 SELECT 
 t.date AS transaction_date_fk,
