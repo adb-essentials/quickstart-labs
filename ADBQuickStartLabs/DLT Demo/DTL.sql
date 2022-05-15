@@ -10,6 +10,19 @@ select explode(sequence(to_date('2004-01-01'), to_date('2020-12-31'), interval 1
 
 -- COMMAND ----------
 
+CREATE OR REFRESH STREAMING LIVE TABLE transactions_bronze
+COMMENT "Parquet files from landing zone"
+TBLPROPERTIES ("quality" = "landing")
+AS
+SELECT * 
+  FROM cloud_files(
+        "/mnt/adbquickstart/transactions/", "parquet", 
+        map("schema", "msno string, payment_method_id string, payment_plan_days string, plan_list_price string, actual_amount_paid string, is_auto_renew string, transaction_date string, membership_expire_date string, is_cancel string"
+            )
+        )
+
+-- COMMAND ----------
+
 CREATE OR REFRESH STREAMING LIVE TABLE members_bronze
 COMMENT "CSV files from landing zone"
 TBLPROPERTIES ("quality" = "landing")
