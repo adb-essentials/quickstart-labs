@@ -26,6 +26,11 @@
 -- COMMAND ----------
 
 -- MAGIC %md
+-- MAGIC # Create a Delta Live Tables Pipeline
+
+-- COMMAND ----------
+
+-- MAGIC %md
 -- MAGIC ### Navigate to Databricks Workflows
 -- MAGIC <img src="https://publicimg.blob.core.windows.net/images/DLT1.png" width="150">
 
@@ -64,6 +69,11 @@
 -- MAGIC %md
 -- MAGIC ### Browse the lineage and data quality information of your completed DLT pipeline  
 -- MAGIC <img src="https://publicimg.blob.core.windows.net/images/DLT6.png" width="1200">
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC # Connect to the DLT Database using Databricks SQL and Power BI
 
 -- COMMAND ----------
 
