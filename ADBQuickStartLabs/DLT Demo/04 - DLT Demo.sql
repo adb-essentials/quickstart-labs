@@ -18,6 +18,11 @@
 -- COMMAND ----------
 
 -- MAGIC %md
+-- MAGIC # Create a DLT notebook with Data Quality rules
+
+-- COMMAND ----------
+
+-- MAGIC %md
 -- MAGIC ### Browse the Delta Live Tables code in the following notebook  
 -- MAGIC ..ADBQuickStartLabs/DLT Demo/DTL
 -- MAGIC 
