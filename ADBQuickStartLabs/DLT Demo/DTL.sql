@@ -17,7 +17,7 @@ AS
 SELECT * 
   FROM cloud_files(
         "/mnt/adbquickstart/transactions/", "parquet", 
-        map("schema", "msno string, payment_method_id string, payment_plan_days string, plan_list_price string, actual_amount_paid string, is_auto_renew string, transaction_date string, membership_expire_date string, is_cancel string"
+        map("schema", "msno string, payment_method_id int, payment_plan_days int, plan_list_price int, actual_amount_paid int, is_auto_renew int, transaction_date date, membership_expire_date date, is_cancel int"
             )
         )
 
@@ -184,8 +184,8 @@ COMMENT "transactions fact"
 TBLPROPERTIES ("quality" = "gold", "delta.targetFileSize" = "32mb", "pipelines.autoOptimize.zOrderCols" = "transaction_date_fk,members_fk")
 AS 
 SELECT 
-t.transaction_date AS transaction_date_fk,
-t.membership_expire_date AS membership_expire_date_fk,
+CAST(date_format(t.transaction_date, "yyyyMMdd") AS INT) AS transaction_date_fk,
+CAST(date_format(t.membership_expire_date, "yyyyMMdd") AS INT) AS membership_expire_date_fk,
 CASE WHEN ISNULL(m.members_sk) THEN 0 ELSE m.members_sk END as members_fk,
 t.msno,
 t.payment_method_id,

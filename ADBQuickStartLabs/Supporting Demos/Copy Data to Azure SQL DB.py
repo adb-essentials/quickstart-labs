@@ -6,11 +6,11 @@ user_logs_bronze = spark.read.format("delta").load('/mnt/adbquickstart/bronze/us
 
 # COMMAND ----------
 
-user = "ne"
-pwd = "Lakehouse12345"
+user = ""
+pwd = ""
 
 # Change to your own JDBC URL accordingly especially the server address and port
-jdbc_url = "jdbc:sqlserver://nesqlserver.database.windows.net:1433;database=ne-sqldb;"
+jdbc_url = "jdbc:sqlserver://servername.database.windows.net:1433;database=ne-sqldb;"
 
 
 # COMMAND ----------
