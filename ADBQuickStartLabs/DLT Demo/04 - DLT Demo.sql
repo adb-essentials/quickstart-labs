@@ -54,7 +54,7 @@
 -- MAGIC **Pipeline name:** QuickStart Labs DLT  
 -- MAGIC **Notebook Libraries:** browse to the DLT Notebook at ...ADBQuickStartLabs/DLT Demo/DTL  
 -- MAGIC **Configuration:** pipelines.applyChangesPreviewEnabled  true   
--- MAGIC **Target:** DLT_demo  
+-- MAGIC **Target:** dlt_demo  
 -- MAGIC **Enable autoscaling:** uncheck  
 -- MAGIC **Cluster workers:** 2  
 -- MAGIC **Use Photon Acceleration:**  check  
@@ -105,8 +105,8 @@
 -- COMMAND ----------
 
 -- MAGIC %md
--- MAGIC ### From the Home menu, click on the Transform data drop down menu, click Edit parameters  
--- MAGIC <img src="https://publicimg.blob.core.windows.net/images/DLT9.png" width="800">
+-- MAGIC ### Copy the Server hostName and HTTP Path from the SQL Endpoint into your Power BI parameters. Enter the metastore as hive_metastore and database as dlt_demo. Click OK  
+-- MAGIC <img src="https://publicimg.blob.core.windows.net/images/DLT10.png" width="800">
 
 -- COMMAND ----------
 
@@ -116,12 +116,6 @@
 -- MAGIC 
 -- MAGIC ### Click on SQL Endpoints, click on the SQL Endpoint for your lab environment, click on connection details  
 -- MAGIC <img src="https://publicimg.blob.core.windows.net/images/SQLEndpoint.png" width="800">
-
--- COMMAND ----------
-
--- MAGIC %md
--- MAGIC ### Copy the Server hostName and HTTP Path from the SQL Endpoint into your Power BI parameters. Enter the metastore as hive_metastore and database as DLT_demo. Click OK  
--- MAGIC <img src="https://publicimg.blob.core.windows.net/images/DLT10.png" width="800">
 
 -- COMMAND ----------
 
