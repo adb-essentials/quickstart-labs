@@ -7,7 +7,9 @@
 -- MAGIC 3. Connect Power BI to your DLT database using Databrick SQL
 -- MAGIC 
 -- MAGIC ## The Use Case
--- MAGIC We will analyze public subscriber data from a popular Korean music streaming service called KKbox stored in Azure Blob Storage. The goal of the notebook is to answer a set of business-related questions about our business, subscribers and usage. 
+-- MAGIC We will analyze public subscriber data from a popular Korean music streaming service called KKbox stored in Azure Blob Storage. The goal of the notebook is create a DLT pipeline which will load a star schema in the Lakehouse to be used with Power BI and other BI tools through Databricks SQL. 
+-- MAGIC 
+-- MAGIC ***This DLT pipeline will not work unless you have already mounted your storage account. Refer to notebook "01 - Data Engineer" for mounting instructions.***
 
 -- COMMAND ----------
 
@@ -55,6 +57,7 @@
 -- MAGIC **Notebook Libraries:** browse to the DLT Notebook at ...ADBQuickStartLabs/DLT Demo/DTL  
 -- MAGIC **Configuration:** pipelines.applyChangesPreviewEnabled  true   
 -- MAGIC **Target:** dlt_demo  
+-- MAGIC **Storage location:** leave blank  
 -- MAGIC **Enable autoscaling:** uncheck  
 -- MAGIC **Cluster workers:** 2  
 -- MAGIC **Use Photon Acceleration:**  check  
@@ -94,7 +97,7 @@
 
 -- MAGIC %md
 -- MAGIC ### Download the Power BI Desktop file to your Windows OS  
--- MAGIC https://github.com/adb-essentials/quickstart-labs/blob/main/ADBQuickStartLabs/DLT%20Demo/QuickStart%20Labs%20Power%20BI%20DLT%20Demo.pbix?raw=true  
+-- MAGIC https://github.com/adb-essentials/quickstart-labs/blob/main/ADBQuickStartLabs/DLT%20Demo/QuickStart%20Labs%20Power%20BI%20DLT%20Demo.pbit?raw=true  
 
 -- COMMAND ----------
 
@@ -120,5 +123,5 @@
 -- COMMAND ----------
 
 -- MAGIC %md
--- MAGIC ### With the Power BI Parameters updated, Click Refresh, you can now browse the DTL_demo database in Power BI    
+-- MAGIC ### With the Power BI Parameters updated, Click Refresh, you can now browse the dlt_demo database in Power BI    
 -- MAGIC <img src="https://publicimg.blob.core.windows.net/images/DLT11.png" width="800">

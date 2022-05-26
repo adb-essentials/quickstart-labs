@@ -16,8 +16,9 @@ TBLPROPERTIES ("quality" = "landing")
 AS
 SELECT * 
   FROM cloud_files(
-        "/mnt/adbquickstart/transactions/", "parquet", 
-        map("schema", "msno string, payment_method_id int, payment_plan_days int, plan_list_price int, actual_amount_paid int, is_auto_renew int, transaction_date date, membership_expire_date date, is_cancel int"
+        "/mnt/adbquickstart/transactions*.csv", "csv", 
+        map("cloudFiles.inferColumnTypes", "true",
+            "header", "true"
             )
         )
 
@@ -111,7 +112,17 @@ CREATE OR REFRESH TEMPORARY STREAMING LIVE TABLE transactions_bronze_clean_v(
 )
 TBLPROPERTIES ("quality" = "silver")
 COMMENT "Cleansed bronze user logs view (i.e. what will become Silver)"
-AS SELECT * 
+AS 
+SELECT 
+ msno,
+ payment_method_id,
+ payment_plan_days,
+ plan_list_price,
+ actual_amount_paid,
+ is_auto_renew,
+ to_date(CAST(transaction_date AS STRING), "yyyyMMdd") AS transaction_date,
+ to_date(CAST(membership_expire_date AS STRING), "yyyyMMdd") AS membership_expire_date,
+ is_cancel
 FROM STREAM(LIVE.transactions_bronze);
 
 -- COMMAND ----------
