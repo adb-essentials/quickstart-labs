@@ -26,7 +26,7 @@
 
 -- MAGIC %md
 -- MAGIC ### Browse the Delta Live Tables code in the following notebook  
--- MAGIC ..ADBQuickStartLabs/DLT Demo/DTL
+-- MAGIC ..ADBQuickStartLabs/DLT Demo/DLT Code
 -- MAGIC 
 -- MAGIC <img src="https://publicimg.blob.core.windows.net/images/DLTCode1.png" width="700">
 
