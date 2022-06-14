@@ -54,7 +54,7 @@
 -- MAGIC 
 -- MAGIC **Product edition:** leave as Advanced  
 -- MAGIC **Pipeline name:** QuickStart Labs DLT  
--- MAGIC **Notebook Libraries:** browse to the DLT Notebook at ...ADBQuickStartLabs/DLT Demo/DTL  
+-- MAGIC **Notebook Libraries:** browse to the DLT Notebook at ...ADBQuickStartLabs/DLT Demo/DLT Code  
 -- MAGIC **Configuration:** pipelines.applyChangesPreviewEnabled  true   
 -- MAGIC **Target:** dlt_demo  
 -- MAGIC **Storage location:** leave blank  
