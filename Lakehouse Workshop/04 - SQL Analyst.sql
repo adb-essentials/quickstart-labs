@@ -1,7 +1,7 @@
 -- Databricks notebook source
 -- MAGIC %md
--- MAGIC # Azure Databricks Quickstart for Data Analysts
--- MAGIC Welcome to the quickstart lab for data analysts on Azure Databricks! Over the course of this notebook, you will use a real-world dataset and learn how to:
+-- MAGIC # Azure Databricks Lakehouse Labs for Data Analysts
+-- MAGIC Welcome to the Lakehouse lab for data analysts on Azure Databricks! Over the course of this notebook, you will use a real-world dataset and learn how to:
 -- MAGIC 1. Access your enterprise Lakehouse in Azure using Databricks SQL
 -- MAGIC 2. Explore data sets using SQL powered by Photon
 -- MAGIC 
@@ -10,70 +10,11 @@
 
 -- COMMAND ----------
 
--- MAGIC %md
--- MAGIC ##Initial Set-up
--- MAGIC 
--- MAGIC ### Enter the Blob_Container , Blob_Account and Account_Key for the Cloudlabs Environment
+-- MAGIC %run "../Lakehouse Workshop/00 - Set Lab Variables"
 
 -- COMMAND ----------
 
--- MAGIC %py
--- MAGIC dbutils.widgets.text("ACCOUNT_KEY", "", "ACCOUNT_KEY")
--- MAGIC dbutils.widgets.text("BLOB_CONTAINER", "", "BLOB_CONTAINER")
--- MAGIC dbutils.widgets.text("BLOB_ACCOUNT", "", "BLOB_ACCOUNT")
--- MAGIC dbutils.widgets.text("Databricks_Token", "", "Databricks_Token")
-
--- COMMAND ----------
-
--- MAGIC %md
--- MAGIC ##Obtain a Personal Access Token and save it to the Databricks_Token widget  
--- MAGIC 1.Navigate to Settings -> User Settings  
--- MAGIC <img src="https://publicimg.blob.core.windows.net/images/PAT1.png" width="400">
--- MAGIC 
--- MAGIC 2.Under Access tokens -> Click Generate new token  
--- MAGIC <img src="https://publicimg.blob.core.windows.net/images/PAT2.png" width="300">
--- MAGIC 
--- MAGIC 3.Enter an optional description under comment -> Click Generate  
--- MAGIC <img src="https://publicimg.blob.core.windows.net/images/PAT3.png" width="400">
--- MAGIC 
--- MAGIC 4.Copy your token value to the clipboard -> Click Done  
--- MAGIC <img src="https://publicimg.blob.core.windows.net/images/PAT4.png" width="400">
--- MAGIC 
--- MAGIC 5.Save your token value to the Databricks_Token widget  
--- MAGIC <img src="https://publicimg.blob.core.windows.net/images/PAT5.png" width="600">
--- MAGIC 
--- MAGIC You'll use the Databricks_Token again in the next lab
-
--- COMMAND ----------
-
--- MAGIC %py
--- MAGIC BLOB_CONTAINER = dbutils.widgets.get("BLOB_CONTAINER")
--- MAGIC BLOB_ACCOUNT = dbutils.widgets.get("BLOB_ACCOUNT")
--- MAGIC ACCOUNT_KEY = dbutils.widgets.get("ACCOUNT_KEY")
--- MAGIC Databricks_Token = dbutils.widgets.get("Databricks_Token")
-
--- COMMAND ----------
-
--- DBTITLE 1,Mount Blob Storage to DBFS
--- MAGIC %py
--- MAGIC run = dbutils.notebook.run('./Setup Notebooks/00 - Setup Storage', 60, {"BLOB_CONTAINER" : BLOB_CONTAINER,"BLOB_ACCOUNT" : BLOB_ACCOUNT,"ACCOUNT_KEY" : ACCOUNT_KEY })
-
--- COMMAND ----------
-
--- MAGIC %py
--- MAGIC # delete the old database and tables if needed
--- MAGIC _ = spark.sql('DROP DATABASE IF EXISTS kkbox CASCADE')
--- MAGIC 
--- MAGIC # drop any old delta lake files that might have been created
--- MAGIC dbutils.fs.rm('/mnt/adbquickstart/bronze', recurse=True)
--- MAGIC dbutils.fs.rm('/mnt/adbquickstart/gold', recurse=True)
--- MAGIC dbutils.fs.rm('/mnt/adbquickstart/silver', recurse=True)
--- MAGIC dbutils.fs.rm('/mnt/adbquickstart/checkpoint', recurse=True)
-
--- COMMAND ----------
-
--- DBTITLE 1,Create Lab Queries
--- MAGIC %run "../ADBQuickStartLabs/Setup Notebooks/00 - Create Queries" $Databricks_Token = $Databricks_Token
+-- MAGIC %run "../Lakehouse Workshop/04 - SQL Analyst Queries/04 - Create Queries"
 
 -- COMMAND ----------
 
@@ -95,45 +36,74 @@
 
 -- MAGIC %md
 -- MAGIC ### Databricks SQL is a DW and BI Engine directly on the Lakehouse  
--- MAGIC <img src="https://publicimg.blob.core.windows.net/images/DBSQL1.png" width="1200">
+-- MAGIC <img src="https://publicimg.blob.core.windows.net/images/NewLabImages/DBSQL1.1.png" width="1200">
 
 -- COMMAND ----------
 
 -- MAGIC %md
 -- MAGIC ### Open a new browser tab. In the lefthand navigation, change the persona switcher to SQL  
 -- MAGIC 
--- MAGIC <img src="https://publicimg.blob.core.windows.net/images/DBSQL2.png" width="300">
+-- MAGIC <img src="https://publicimg.blob.core.windows.net/images/NewLabImages/DBSQL2.1.png" width="300">
 
 -- COMMAND ----------
 
 -- MAGIC %md
--- MAGIC ### Compute in Databricks SQL is called SQL Endpoints  
--- MAGIC SQL Endpoints are compute clusters optimized for DW and BI queries on the Lakehouse  
+-- MAGIC ### Compute in Databricks SQL is called SQL Warehouses  
+-- MAGIC SQL Warehouses are compute clusters optimized for DW and BI queries on the Lakehouse  
 -- MAGIC They are powered by Delta and Photon - a C++ vectorized engine that is really fast  
--- MAGIC Photon is __*FREE*__ in Databricks SQL!
+-- MAGIC Photon is __*FREE*__ in Databricks SQL!  
 -- MAGIC 
+-- MAGIC <img src="https://publicimg.blob.core.windows.net/images/NewLabImages/DBSQL3.1.png" width="150">
 -- MAGIC 
--- MAGIC <img src="https://publicimg.blob.core.windows.net/images/DBSQL3.png" width="1200">
+-- MAGIC SQL Warehouses come in 3 different [__*warehouse types*__](https://docs.databricks.com/sql/admin/warehouse-type.html) which allow you to mix and match compute to your target workload  
+-- MAGIC <img src="https://publicimg.blob.core.windows.net/images/NewLabImages/DBSQL4.2.png" width="1200">
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC ### Databricks SQL Serverless is AWESOME!
+-- MAGIC <img src="https://publicimg.blob.core.windows.net/images/NewLabImages/DBSQL4.3.png" width="1200">
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC ### Creating a SQL Warehouse  
+-- MAGIC Navigate to SQL Warehouses and click Create SQL Warehouse
+-- MAGIC <img src="https://publicimg.blob.core.windows.net/images/NewLabImages/DBSQL5.2.png" width="1200">
+-- MAGIC 
+-- MAGIC Fill in the following fields:  
+-- MAGIC **Name:** Lakehouse Labs  
+-- MAGIC **Cluster size:** Small    
+-- MAGIC **Auto stop:** On, 10 minutes (Serverless can be as low as 5 minutes via UI and 1 minute via API)  
+-- MAGIC **Scaling:** Min 1 and Max 1   
+-- MAGIC **Type:** Pro (or potentially Serverless if it is [turned on](https://learn.microsoft.com/en-us/azure/databricks/sql/admin/serverless))    
+-- MAGIC **Advanced options Tags:** blank  
+-- MAGIC **Advanced options Unity Catalog:** off  
+-- MAGIC **Advanced options Spot instance policy:** Cost optimized  
+-- MAGIC **Advanced options Channel:** Current  
+-- MAGIC **Click Create**    
+-- MAGIC <img src="https://publicimg.blob.core.windows.net/images/NewLabImages/DBSQL5.3.png" width="600">
 
 -- COMMAND ----------
 
 -- MAGIC %md
 -- MAGIC ### Browse your databases and tables using Data Explorer
 -- MAGIC In Data Explorer you can see the objects you have access to  
--- MAGIC For each table/view, you can view the size, schema, sample data, table details, and even version history of the table  
+-- MAGIC For each table/view, you can view the size, schema, sample data, table details, and even version history of the table.  
+-- MAGIC If you are using Unity Catalog, you'll also be able to view the table and column level lineage that is automatically captured by Databricks  
 -- MAGIC If you are an admin, you can even manage permissions to the databases and tables in Data Explorer  
 -- MAGIC 
 -- MAGIC 
--- MAGIC <img src="https://publicimg.blob.core.windows.net/images/DBSQL4.png" width="1200">
+-- MAGIC <img src="https://publicimg.blob.core.windows.net/images/NewLabImages/DBSQL6.2.png" width="1200">
 
 -- COMMAND ----------
 
 -- MAGIC %md
 -- MAGIC ### The SQL Editor is a powerful SQL IDE built directly into Databricks SQL
 -- MAGIC Browse and search for schema and table objects, view metadata, and explore tables/views  
--- MAGIC Use functionality like intellisense, view past query execution history, create data visualization capabilities, and even download data  
+-- MAGIC Use functionality like intellisense, view past query execution history, create data visualizations, and even download data  
 -- MAGIC 
--- MAGIC <img src="https://publicimg.blob.core.windows.net/images/DBSQL5.png" width="500">
+-- MAGIC <img src="https://publicimg.blob.core.windows.net/images/NewLabImages/DBSQL7.2.png" width="500">
 
 -- COMMAND ----------
 
@@ -149,12 +119,11 @@
 
 -- MAGIC %md
 -- MAGIC ### Step 0, Create Your Databases and Tables
--- MAGIC If you didn't already complete the Data Engineering lab, you'll need to execute the Step 0 query  
--- MAGIC Step 0 creates the database and tables for the SQL Analyst lab using SQL ingestion techniques.  It also optimizes and analyzes those tables   
+-- MAGIC Start this lab by executing query 0 which creates a Churn table using Copy Into and then performs performance optimizations using Optimize and Analyze, and finally loads the tables into to SQL Warehouse SSD cache.       
 -- MAGIC Note that Databricks SQL is a DW engine that can be used for analysis, but also SQL based ETL routines like COPY INTO or CTAS (Create Table As Select)  
 -- MAGIC The purpose of this lab is to focus on the SQL analysis capabilities
 -- MAGIC 
--- MAGIC <img src="https://publicimg.blob.core.windows.net/images/DBSQL7.png" width="1200">
+-- MAGIC <img src="https://publicimg.blob.core.windows.net/images/NewLabImages/DBSQL8.2.png" width="1200">
 
 -- COMMAND ----------
 
@@ -162,7 +131,7 @@
 -- MAGIC ## Analyze Our Data for Patterns and Metrics
 -- MAGIC Data Analysts typically explore enterprise data for patterns, historical trends, and answering data-driven questions about the business. 
 -- MAGIC 
--- MAGIC In our scenario, we will attempt to answer the following questions:
+-- MAGIC ***Execute queries 1 through 9*** and attempt to answer the following questions:
 -- MAGIC * Are our subscribers growing or shrinking? By how much every month?
 -- MAGIC * What is the breakdown of *new* (recently subscribed) vs. *old* (subscribed 1 or more years ago) customers?
 -- MAGIC * What is the renewal and cancellation rates among our subscribers? What % of user transactions are new subscriptions?

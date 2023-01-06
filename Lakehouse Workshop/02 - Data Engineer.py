@@ -1,7 +1,7 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # Azure Databricks Quickstart for Data Engineers
-# MAGIC Welcome to the quickstart lab for data engineers on Azure Databricks! Over the course of this notebook, you will use a real-world dataset and learn how to:
+# MAGIC # Azure Databricks Lakehouse Lab for Data Engineers
+# MAGIC Welcome to the Lakehouse lab for data engineers on Azure Databricks! Over the course of this notebook, you will use a real-world dataset and learn how to:
 # MAGIC 1. Access your enterprise data lake in Azure using Databricks
 # MAGIC 2. Transform and store your data in a reliable and performant Delta Lake
 # MAGIC 3. Use Update,Delete,Merge,Schema Evolution and Time Travel Capabilities, CDF (Change Data Feed) of Delta Lake
@@ -13,6 +13,12 @@
 
 # DBTITLE 1,Lakehouse Workshop Storage Variables
 # MAGIC %run "../Lakehouse Workshop/00 - Set Lab Variables"
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### Notebook Widgets
+# MAGIC The following notebook widgets are being created automatically for you and defaulted to your set variables for easier parameterization of code.  
 
 # COMMAND ----------
 
@@ -29,12 +35,6 @@ dbutils.widgets.text("Data_PATH_User", Data_PATH_User)
 # COMMAND ----------
 
 dbutils.widgets.text("Data_PATH_Ingest", Data_PATH_Ingest)
-
-# COMMAND ----------
-
-# DBTITLE 1,Install libraries
-from pyspark.sql.types import *
-from pyspark.sql.functions import *
 
 # COMMAND ----------
 
@@ -59,7 +59,7 @@ _ = spark.sql('CREATE DATABASE {0} LOCATION "{1}"'.format(UserDB, Data_PATH_User
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Once mounted, we can view and navigate the contents of our container using Databricks `%fs` file system commands.
+# MAGIC We can view and navigate the contents of our container using Databricks `%fs` [file system commands](https://docs.databricks.com/dev-tools/databricks-utils.html#file-system-utility-dbutilsfs).
 
 # COMMAND ----------
 
@@ -136,11 +136,12 @@ dbutils.fs.ls(Data_PATH_User + '/bronze/transactions')
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Notice how the partitionBy setting wrote out the data to different directories by the transaction date. The actual Parquet files are in the sub-directories. This technique is known as data partitioning.  
-# MAGIC **Databricks doesn't recommend that you partition your data until the dataset is at least 1TB in size.** This was just an example
+# MAGIC Notice how the partitionBy setting wrote out the data to different directories by the transaction date. The actual Parquet files are in the sub-directories. This technique is known as data partitioning and it is generally used to optimize working with large datasets.  
+# MAGIC **However, Databricks doesn't recommend that you partition your data until the dataset is at least 1TB in size as Delta Lake Optimize and ZOrder operations provide better performance than partitioning;** this was just an example.
 
 # COMMAND ----------
 
+# DBTITLE 1,Files in the partitioned directory
 dbutils.fs.ls(Data_PATH_User + '/bronze/transactions/transaction_date=2015-01-09/')
 
 # COMMAND ----------
@@ -174,8 +175,6 @@ dfBronze = spark.readStream.format("cloudFiles") \
   .option('header','true') \
   .schema('msno string, city int, bd int, gender string ,registered_via int , registration_init_time string') \
   .load(Data_PATH_Ingest + "/members/")
-
-#.option("cloudFiles.schemaLocation", "/mnt/adbquickstart/schema/members") \
 
 # The stream will shut itself off when it is finished based on the trigger once feature
 # The checkpoint location saves the state of the ingest when it is shut off so we know where to pick up next time
@@ -237,8 +236,8 @@ user_logs_bronze = spark.read.format("delta").load(Data_PATH_User + '/bronze/use
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Scenario 3 - Delta Features
-# MAGIC #### Further we are concentrating on Members dataset. We will create a Gold table (Aggregated table)
+# MAGIC ### Scenario 3 - Delta Lake Features
+# MAGIC In the following sections we'll focus on Delta Lake features using the Members table. We'll create a Gold table (aggregated or data model table) for our testing. In a real-world scenario, we'd likely have a Silver table in between Bronze and Gold that might have standardization, data clean-up, additional shape/structure, and even business rules applied.
 
 # COMMAND ----------
 
@@ -247,7 +246,8 @@ user_logs_bronze = spark.read.format("delta").load(Data_PATH_User + '/bronze/use
 
 # COMMAND ----------
 
-# MAGIC %sql DROP TABLE IF EXISTS ${UserDB}.members_gold
+# MAGIC %sql 
+# MAGIC DROP TABLE IF EXISTS ${UserDB}.members_gold
 
 # COMMAND ----------
 
@@ -419,7 +419,7 @@ display(member_dummy)
 
 # COMMAND ----------
 
-# DBTITLE 1,Merge it to the delta table
+# DBTITLE 1,Merge the schema to the delta table
 # Add the mergeSchema option
 member_dummy.write.option("mergeSchema","true").format("delta").mode("append").save(Data_PATH_User + '/gold/members/')
 
@@ -483,7 +483,7 @@ member_dummy.write.option("mergeSchema","true").format("delta").mode("append").s
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Or even back shallow or deep clones of a table (backups or testing tables)
+# MAGIC ### Or even create shallow or deep clones of a table (backups or testing tables)
 
 # COMMAND ----------
 

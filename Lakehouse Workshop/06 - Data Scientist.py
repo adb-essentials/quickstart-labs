@@ -11,32 +11,39 @@
 
 # COMMAND ----------
 
-dbutils.widgets.text("ACCOUNT_KEY", "", "ACCOUNT_KEY")
-dbutils.widgets.text("BLOB_CONTAINER", "", "BLOB_CONTAINER")
-dbutils.widgets.text("BLOB_ACCOUNT", "", "BLOB_ACCOUNT")
-dbutils.widgets.text("Databricks_Token", "", "Databricks_Token")
+# DBTITLE 1,Lakehouse Workshop Storage Variables
+# MAGIC %run "../Lakehouse Workshop/00 - Set Lab Variables"
 
 # COMMAND ----------
 
-BLOB_CONTAINER = dbutils.widgets.get("BLOB_CONTAINER")
-BLOB_ACCOUNT = dbutils.widgets.get("BLOB_ACCOUNT")
-ACCOUNT_KEY = dbutils.widgets.get("ACCOUNT_KEY")
-Databricks_Token = dbutils.widgets.get("Databricks_Token")
+# MAGIC %md
+# MAGIC ### Notebook Widgets
+# MAGIC The following notebook widgets are being created automatically for you and defaulted to your set variables for more easier parameterization of code.  
 
 # COMMAND ----------
 
-# DBTITLE 1,Mount Blob Storage to DBFS
-run = dbutils.notebook.run('./Setup Notebooks/00 - Setup Storage', 60, {"BLOB_CONTAINER" : BLOB_CONTAINER,"BLOB_ACCOUNT" : BLOB_ACCOUNT,"ACCOUNT_KEY" : ACCOUNT_KEY })
+dbutils.widgets.removeAll()
+
+# COMMAND ----------
+
+dbutils.widgets.text("UserDB", UserDB)
+
+# COMMAND ----------
+
+dbutils.widgets.text("Data_PATH_User", Data_PATH_User)
+
+# COMMAND ----------
+
+dbutils.widgets.text("Data_PATH_Ingest", Data_PATH_Ingest)
 
 # COMMAND ----------
 
 # DBTITLE 1,Install Libraries
-# MAGIC %run "../ADBQuickStartLabs/Setup Notebooks/00 - Libraries Setup"
-
-# COMMAND ----------
-
-# DBTITLE 1,Ingest Datasets
-# MAGIC %run "../ADBQuickStartLabs/Setup Notebooks/00 - Ingest Data ML"
+from pyspark.sql.types import *
+from pyspark.sql.functions import *
+from databricks.feature_store import *
+from pyspark.ml.feature import *
+import mlflow
 
 # COMMAND ----------
 
@@ -61,10 +68,10 @@ run = dbutils.notebook.run('./Setup Notebooks/00 - Setup Storage', 60, {"BLOB_CO
 # COMMAND ----------
 
 # DBTITLE 1,Load pre-loaded data
-transactions = spark.read.format("delta").load('/mnt/adbquickstart/bronze/transactions/') 
-members = spark.read.format("delta").load('/mnt/adbquickstart/bronze/members/')           
-user_logs = spark.read.format("delta").load('/mnt/adbquickstart/bronze/user_log/')
-train = spark.read.format("delta").load('/mnt/adbquickstart/bronze/train/')
+transactions = spark.read.format("delta").load(Data_PATH_User + '/bronze/transactions')
+members = spark.read.format("delta").load(Data_PATH_User + "/members")
+user_logs = spark.read.format("delta").load(Data_PATH_User + '/bronze/user_log/')
+train = spark.read.format("delta").load(Data_PATH_User + '/bronze/train')
 
 # COMMAND ----------
 
@@ -101,24 +108,22 @@ member_feature = member_feature.na.fill("NA", colNames)
 gender_index=StringIndexer().setInputCol("gender").setOutputCol("gender_indexed")
 member_feature=gender_index.fit(member_feature).transform(member_feature)
 
-member_feature.write.format('delta').mode('overwrite').option('mergeSchema','true').save('/mnt/adbquickstart/silver/member_feature')
+member_feature.write.format('delta').mode('overwrite').option('mergeSchema','true').save(Data_PATH_User + '/silver/member_feature')
 
 # create table object to make delta lake queriable
 spark.sql('''
-  CREATE TABLE IF NOT EXISTS kkbox.member_features
+  CREATE TABLE IF NOT EXISTS {0}.member_features
   USING DELTA 
-  LOCATION '/mnt/adbquickstart/silver/member_feature'
-  ''')
+  LOCATION "{1}/silver/member_feature"
+  '''.format(UserDB, Data_PATH_User))
 
 # COMMAND ----------
 
 # DBTITLE 1,Register member feature table
-from databricks.feature_store import feature_table
-
 fs = FeatureStoreClient()
 
 fs.register_table(
-  delta_table='kkbox.member_features',
+  delta_table= UserDB + '.member_features',
   primary_keys='msno',
   description='Member features commonly used in ML model'
 )
@@ -165,14 +170,14 @@ churn_data = churn_data.drop(*columns_to_drop)
 colNames = ["gender"]
 churn_data = churn_data.na.fill("NA", colNames)
 
-churn_data.write.format('delta').mode('overwrite').option("mergeSchema","true").save('/mnt/adbquickstart/silver/churndata')
+churn_data.write.format('delta').mode('overwrite').option("mergeSchema","true").save(Data_PATH_User + '/silver/churndata')
 
 # create table object to make delta lake queriable
 spark.sql('''
-  CREATE TABLE IF NOT EXISTS kkbox.churndata
+  CREATE TABLE IF NOT EXISTS {0}.churndata
   USING DELTA 
-  LOCATION '/mnt/adbquickstart/silver/churndata'
-  ''')
+  LOCATION '{1}/silver/churndata'
+  '''.format(UserDB, Data_PATH_User))
 
 # COMMAND ----------
 
@@ -182,7 +187,7 @@ spark.sql('''
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC select * from kkbox.churndata
+# MAGIC select * from ${UserDB}.churndata
 
 # COMMAND ----------
 
@@ -191,13 +196,11 @@ spark.sql('''
 
 # COMMAND ----------
 
-from databricks.feature_store import FeatureLookup
-
 # The model training uses two features from the 'customer_features' feature table and
 # a single feature from 'product_features'
 feature_lookups = [
     FeatureLookup(
-      table_name = 'kkbox.member_features',
+      table_name = UserDB + '.member_features',
       feature_names = ['no_transactions','Total25','Total100','UniqueSongs','TotalSecHeard','city','bd','registered_via','registration_init_time','gender_indexed'],
       lookup_key = 'msno'
     )
@@ -206,7 +209,7 @@ feature_lookups = [
 fs = FeatureStoreClient()
 
 training_set = fs.create_training_set(
-  df=spark.read.table("kkbox.churndata"),
+  df=spark.read.table(UserDB + ".churndata"),
   feature_lookups = feature_lookups,
   label = 'is_churn',
   exclude_columns = ['msno']
@@ -217,14 +220,14 @@ display(training_df)
 
 # COMMAND ----------
 
-training_df.write.format('delta').mode('overwrite').option('mergeSchema','true').save('/mnt/adbquickstart/silver/trainingdata')
+training_df.write.format('delta').mode('overwrite').option('mergeSchema','true').save(Data_PATH_User + '/silver/trainingdata')
 
 # create table object to make delta lake queriable
 spark.sql('''
-  CREATE TABLE IF NOT EXISTS kkbox.trainingdata
+  CREATE TABLE IF NOT EXISTS {0}.trainingdata
   USING DELTA 
-  LOCATION '/mnt/adbquickstart/silver/trainingdata'
-  ''')
+  LOCATION '{1}/silver/trainingdata'
+  '''.format(UserDB, Data_PATH_User))
 
 # COMMAND ----------
 
@@ -233,7 +236,7 @@ spark.sql('''
 
 # COMMAND ----------
 
-trainDF, testDF = spark.table('kkbox.trainingdata').randomSplit([.8, .2], seed=42)
+trainDF, testDF = spark.table(UserDB + '.trainingdata').randomSplit([.8, .2], seed=42)
 
 # COMMAND ----------
 
@@ -358,7 +361,7 @@ print(summary.best_trial)
 # COMMAND ----------
 
 # Register the best model run
-model_name = "KKBox-Churn-Prediction"
+model_name = "KKBox-Churn-Prediction-" + UserDB
 
 model_uri = f"runs:/{summary.best_trial.mlflow_run_id}/model"
 
@@ -367,14 +370,13 @@ registered_model_version = mlflow.register_model(model_uri, model_name)
 # COMMAND ----------
 
 # DBTITLE 1,Add Model Description
-# MAGIC %python
-# MAGIC from mlflow.tracking.client import MlflowClient
-# MAGIC 
-# MAGIC client = MlflowClient()
-# MAGIC client.update_registered_model(
-# MAGIC   name=registered_model_version.name,
-# MAGIC   description="This model predicts churn of KKbox customers using an AutoML model."
-# MAGIC )
+from mlflow.tracking.client import MlflowClient
+
+client = MlflowClient()
+client.update_registered_model(
+  name=registered_model_version.name,
+  description="This model predicts churn of KKbox customers using an AutoML model."
+)
 
 # COMMAND ----------
 
@@ -461,22 +463,22 @@ print(f"f1 on test dataset: {f1}")
 
 # COMMAND ----------
 
-goldDF = spark.table('kkbox.trainingdata')
+goldDF = spark.table(UserDB + '.trainingdata')
 goldDF = goldDF.withColumn("prediction", predict(*goldDF.drop("is_churn").columns))
 
-goldDF.write.format('delta').mode('overwrite').option('mergeSchema','true').save('/mnt/adbquickstart/gold/scoreddata')
+goldDF.write.format('delta').mode('overwrite').option('mergeSchema','true').save(Data_PATH_User + '/gold/scoreddata')
 
 # create table object to make delta lake queriable
 spark.sql('''
-  CREATE TABLE IF NOT EXISTS kkbox.scoreddata
+  CREATE TABLE IF NOT EXISTS {0}.scoreddata
   USING DELTA 
-  LOCATION '/mnt/adbquickstart/gold/scoreddata'
-  ''')
+  LOCATION '{1}/gold/scoreddata'
+  '''.format(UserDB, Data_PATH_User))
 
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC SELECT * FROM kkbox.scoreddata
+# MAGIC SELECT * FROM ${UserDB}.scoreddata
 
 # COMMAND ----------
 

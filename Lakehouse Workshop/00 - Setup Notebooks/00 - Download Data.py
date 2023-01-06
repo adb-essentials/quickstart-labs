@@ -5,14 +5,20 @@
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Mounting Azure Storage using an Access Key or Service Principal
-# MAGIC We will mount an Azure blob storage container to the workspace using a shared Access Key. More instructions can be found [here](https://docs.microsoft.com/en-us/azure/databricks/data/data-sources/azure/azure-storage#--mount-azure-blob-storage-containers-to-dbfs). 
-# MAGIC 
-# MAGIC #####Note: For this Demo we are using access Key and mounting the blob on DBFS. Ideally one should authenticate using Service Principal and use abfss driver and full path to access data
+# MAGIC ### Ingesting Data to Cloud Storage
+# MAGIC The following code downloads the Lakehouse Workshop testing data to the object storage paths set in the "00 - Set Lab Variables" notebook. If no variables are set, the code will use a default location in DBFS.
 
 # COMMAND ----------
 
-# MAGIC %run "/Repos/leo.furlong@databricks.com/Lakehouse-Workshop/Lakehouse Workshop/Setup Notebooks/00 - Lab Variables"
+dbutils.widgets.text("UserDB", "")
+dbutils.widgets.text("Data_PATH_Ingest", "")
+dbutils.widgets.text("Data_PATH_User", "")
+
+# COMMAND ----------
+
+UserDB = dbutils.widgets.get("UserDB")
+Data_PATH_Ingest = dbutils.widgets.get("Data_PATH_Ingest")
+Data_PATH_User = dbutils.widgets.get("Data_PATH_User")
 
 # COMMAND ----------
 
