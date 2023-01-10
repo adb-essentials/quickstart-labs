@@ -16,7 +16,7 @@ TBLPROPERTIES ("quality" = "landing")
 AS
 SELECT * 
   FROM cloud_files(
-        "/mnt/adbquickstart/transactions*.csv", "csv", 
+        "${Data_PATH_Ingest}/transactions*.csv", "csv", 
         map("cloudFiles.inferColumnTypes", "true",
             "header", "true"
             )
@@ -30,7 +30,7 @@ TBLPROPERTIES ("quality" = "landing")
 AS
 SELECT * 
   FROM cloud_files(
-        "/mnt/adbquickstart/members/", "csv", 
+        "${Data_PATH_Ingest}/members/", "csv", 
         map("cloudFiles.inferColumnTypes", "true",
             "header", "true"
             )
@@ -44,7 +44,7 @@ TBLPROPERTIES ("quality" = "landing")
 AS
 SELECT * 
   FROM cloud_files(
-        "/mnt/adbquickstart/user_logs/", "csv", 
+        "${Data_PATH_Ingest}/user_logs/", "csv", 
         map("cloudFiles.inferColumnTypes", "true",
             "header", "true"
             )

@@ -1,7 +1,7 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # Azure Databricks Quickstart for Data Engineers
-# MAGIC Welcome to the quickstart lab for data engineers on Azure Databricks! Over the course of this notebook, you will use a real-world dataset and learn how to:
+# MAGIC # Azure Databricks Lakehouse Lab for Data Engineers
+# MAGIC Welcome to the Lakehouse lab for data engineers on Azure Databricks! Over the course of this notebook, you will use a real-world dataset and learn how to:
 # MAGIC 1. Access your enterprise data lake in Azure using Databricks
 # MAGIC 2. Transform and store your data in a reliable and performant Delta Lake
 # MAGIC 3. Use Update,Delete,Merge,Schema Evolution and Time Travel Capabilities, CDF (Change Data Feed) of Delta Lake
@@ -11,32 +11,30 @@
 
 # COMMAND ----------
 
+# DBTITLE 1,Lakehouse Workshop Storage Variables
+# MAGIC %run "../Lakehouse Workshop/00 - Set Lab Variables"
+
+# COMMAND ----------
+
 # MAGIC %md
-# MAGIC ##Initial Set-up
-# MAGIC 
-# MAGIC ### Enter the Blob_Container , Blob_Account and Account_Key for the Cloudlabs Environment
+# MAGIC ### Notebook Widgets
+# MAGIC The following notebook widgets are being created automatically for you and defaulted to your set variables for easier parameterization of code.  
 
 # COMMAND ----------
 
-dbutils.widgets.text("ACCOUNT_KEY", "", "ACCOUNT_KEY")
-dbutils.widgets.text("BLOB_CONTAINER", "", "BLOB_CONTAINER")
-dbutils.widgets.text("BLOB_ACCOUNT", "", "BLOB_ACCOUNT")
+dbutils.widgets.removeAll()
 
 # COMMAND ----------
 
-BLOB_CONTAINER = dbutils.widgets.get("BLOB_CONTAINER")
-BLOB_ACCOUNT = dbutils.widgets.get("BLOB_ACCOUNT")
-ACCOUNT_KEY = dbutils.widgets.get("ACCOUNT_KEY")
+dbutils.widgets.text("UserDB", UserDB)
 
 # COMMAND ----------
 
-# DBTITLE 1,Mount Blob Storage to DBFS
-run = dbutils.notebook.run('./Setup Notebooks/00 - Setup Storage', 60, {"BLOB_CONTAINER" : BLOB_CONTAINER,"BLOB_ACCOUNT" : BLOB_ACCOUNT,"ACCOUNT_KEY" : ACCOUNT_KEY })
+dbutils.widgets.text("Data_PATH_User", Data_PATH_User)
 
 # COMMAND ----------
 
-# DBTITLE 1,Install libraries
-# MAGIC %run "../ADBQuickStartLabs/Setup Notebooks/00 - Libraries Setup"
+dbutils.widgets.text("Data_PATH_Ingest", Data_PATH_Ingest)
 
 # COMMAND ----------
 
@@ -44,15 +42,12 @@ run = dbutils.notebook.run('./Setup Notebooks/00 - Setup Storage', 60, {"BLOB_CO
 #import shutil
 # pyspark.sql.types import *
 # delete the old database and tables if needed
-_ = spark.sql('DROP DATABASE IF EXISTS kkbox CASCADE')
+_ = spark.sql('DROP DATABASE IF EXISTS {0} CASCADE'.format(UserDB))
 
 # drop any old delta lake files that might have been created
-dbutils.fs.rm('/mnt/adbquickstart/bronze', recurse=True)
-dbutils.fs.rm('/mnt/adbquickstart/gold', recurse=True)
-dbutils.fs.rm('/mnt/adbquickstart/silver', recurse=True)
-dbutils.fs.rm('/mnt/adbquickstart/checkpoint', recurse=True)
+dbutils.fs.rm(Data_PATH_User, recurse=True)
 # create database to house SQL tables
-_ = spark.sql('CREATE DATABASE kkbox')
+_ = spark.sql('CREATE DATABASE {0} LOCATION "{1}"'.format(UserDB, Data_PATH_User))
 
 # COMMAND ----------
 
@@ -64,11 +59,15 @@ _ = spark.sql('CREATE DATABASE kkbox')
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Once mounted, we can view and navigate the contents of our container using Databricks `%fs` file system commands.
+# MAGIC We can view and navigate the contents of our container using Databricks `%fs` [file system commands](https://docs.databricks.com/dev-tools/databricks-utils.html#file-system-utility-dbutilsfs).
 
 # COMMAND ----------
 
-# MAGIC %fs ls /mnt/adbquickstart/
+dbutils.fs.ls(Data_PATH_Ingest)
+
+# COMMAND ----------
+
+dbutils.fs.ls(Data_PATH_User)
 
 # COMMAND ----------
 
@@ -103,9 +102,9 @@ _ = spark.sql('CREATE DATABASE kkbox')
 # COMMAND ----------
 
 # DBTITLE 1,Prep Transactions Dataset - Parquet Files to Delta
-# Read data from parquet files
+Data_PATH_User + '/bronze/transactions'# Read data from parquet files
 transactions = (
-  spark.read.parquet('/mnt/adbquickstart/transactions')
+  spark.read.parquet(Data_PATH_Ingest + '/transactions')
     )
 
 # persist in delta lake format
@@ -114,25 +113,36 @@ transactions = (
     .format('delta')
     .partitionBy('transaction_date')
     .mode('overwrite')
-    .save('/mnt/adbquickstart/bronze/transactions')
+    .save(Data_PATH_User + '/bronze/transactions')
   )
 
 # create table object to make delta lake queriable
 spark.sql('''
-  CREATE TABLE kkbox.transactions
+  CREATE TABLE {0}.transactions
   USING DELTA 
-  LOCATION '/mnt/adbquickstart/bronze/transactions'
-  ''')
+  LOCATION "{1}/bronze/transactions"
+  '''.format(UserDB, Data_PATH_User))
 
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC SELECT * FROM kkbox.transactions
+# MAGIC SELECT * FROM ${UserDB}.transactions
 
 # COMMAND ----------
 
 # DBTITLE 1,Let's look at the Delta Files
-# MAGIC %fs ls /mnt/adbquickstart/bronze/transactions
+dbutils.fs.ls(Data_PATH_User + '/bronze/transactions')
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC Notice how the partitionBy setting wrote out the data to different directories by the transaction date. The actual Parquet files are in the sub-directories. This technique is known as data partitioning and it is generally used to optimize working with large datasets.  
+# MAGIC **However, Databricks doesn't recommend that you partition your data until the dataset is at least 1TB in size as Delta Lake Optimize and ZOrder operations provide better performance than partitioning;** this was just an example.
+
+# COMMAND ----------
+
+# DBTITLE 1,Files in the partitioned directory
+dbutils.fs.ls(Data_PATH_User + '/bronze/transactions/transaction_date=2015-01-09/')
 
 # COMMAND ----------
 
@@ -164,34 +174,31 @@ dfBronze = spark.readStream.format("cloudFiles") \
   .option('cloudFiles.format', 'csv') \
   .option('header','true') \
   .schema('msno string, city int, bd int, gender string ,registered_via int , registration_init_time string') \
-  .load("/mnt/adbquickstart/members/")
-
-#.option("cloudFiles.schemaLocation", "/mnt/adbquickstart/schema/members") \
+  .load(Data_PATH_Ingest + "/members/")
 
 # The stream will shut itself off when it is finished based on the trigger once feature
 # The checkpoint location saves the state of the ingest when it is shut off so we know where to pick up next time
 dfBronze.writeStream \
   .format("delta") \
   .trigger(once=True) \
-  .option("checkpointLocation", "/mnt/adbquickstart/checkpoint/members") \
-  .start("/mnt/adbquickstart/bronze/members")
+  .option("checkpointLocation", Data_PATH_User + "/checkpoint/members") \
+  .toTable(UserDB + ".members")
+# .start(Data_PATH_User + "/bronze/members")
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC SELECT * FROM ${UserDB}.members
 
 # COMMAND ----------
 
 # DBTITLE 1,Cool.. Lets see if we could see the files in the member delta folder
-# MAGIC %fs ls /mnt/adbquickstart/bronze/members/
+dbutils.fs.ls(Data_PATH_User + "/members")
 
 # COMMAND ----------
 
-# MAGIC %sql
-# MAGIC CREATE TABLE kkbox.members
-# MAGIC USING DELTA 
-# MAGIC LOCATION '/mnt/adbquickstart/bronze/members'
-
-# COMMAND ----------
-
-# MAGIC %sql
-# MAGIC select * from kkbox.members
+# MAGIC %md
+# MAGIC Notice that even though we didn't specify our location, our data was saved as an external table using the default location of the database. If we had not set the default location of the database, the data would have been stored as a managed table.  
 
 # COMMAND ----------
 
@@ -201,36 +208,36 @@ dfBronze.writeStream \
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC COPY INTO delta.`/mnt/adbquickstart/bronze/user_log/`
-# MAGIC     FROM '/mnt/adbquickstart/user_logs/'
+# MAGIC COPY INTO delta.`${Data_PATH_User}/bronze/user_log/`  
+# MAGIC     FROM '${Data_PATH_Ingest}/user_logs/'
 # MAGIC     FILEFORMAT = CSV
 # MAGIC     FORMAT_OPTIONS('header' = 'true')
 
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC CREATE TABLE kkbox.user_log
+# MAGIC CREATE TABLE ${UserDB}.user_log
 # MAGIC USING DELTA 
-# MAGIC LOCATION '/mnt/adbquickstart/bronze/user_log'
+# MAGIC LOCATION '${Data_PATH_User}/bronze/user_log/'
 
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC SELECT * FROM kkbox.user_log
+# MAGIC SELECT * FROM ${UserDB}.user_log
 
 # COMMAND ----------
 
 # DBTITLE 1,Great !!! Now lets read the data and see if everything went well.
 ## Read the Bronze Data
-transactions_bronze = spark.read.format("delta").load('/mnt/adbquickstart/bronze/transactions/')
-members_bronze = spark.read.format("delta").load('/mnt/adbquickstart/bronze/members/')
-user_logs_bronze = spark.read.format("delta").load('/mnt/adbquickstart/bronze/user_log/')
+transactions_bronze = spark.read.format("delta").load(Data_PATH_User + '/bronze/transactions')
+members_bronze = spark.read.format("delta").load(Data_PATH_User + "/members")
+user_logs_bronze = spark.read.format("delta").load(Data_PATH_User + '/bronze/user_log/')
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Scenario 3 - Delta Features
-# MAGIC #### Further we are concentrating on Members dataset. We will create a Gold table (Aggregated table)
+# MAGIC ### Scenario 3 - Delta Lake Features
+# MAGIC In the following sections we'll focus on Delta Lake features using the Members table. We'll create a Gold table (aggregated or data model table) for our testing. In a real-world scenario, we'd likely have a Silver table in between Bronze and Gold that might have standardization, data clean-up, additional shape/structure, and even business rules applied.
 
 # COMMAND ----------
 
@@ -239,16 +246,16 @@ user_logs_bronze = spark.read.format("delta").load('/mnt/adbquickstart/bronze/us
 
 # COMMAND ----------
 
-# MAGIC %sql DROP TABLE IF EXISTS kkbox.members_gold
+# MAGIC %sql 
+# MAGIC DROP TABLE IF EXISTS ${UserDB}.members_gold
 
 # COMMAND ----------
 
-# dbutils.fs.rm("/mnt/adbquickstart/gold/members/",recurse=True)
+# dbutils.fs.rm(Data_PATH_User + "/gold/members/",recurse=True)
 
 # COMMAND ----------
 
 # DBTITLE 1,Members by Registration Year - Create a Gold table
-import pyspark.sql.functions as f
 members_transform = members_bronze.withColumn('years',members_bronze['registration_init_time'].substr(1, 4))
 
 members_gold = members_transform.groupBy('years').count()
@@ -257,8 +264,8 @@ members_gold.createOrReplaceTempView("member_gold")
 
 #Save our Gold table in Delta format and Enable CDC on the Delta Table
 
-# members_gold.write.format('delta').mode('overwrite').save('/mnt/adbquickstart/gold/members/')
-members_gold.write.format('delta').mode('overwrite').option('path', '/mnt/adbquickstart/gold/members/').saveAsTable('kkbox.members_gold')
+# members_gold.write.format('delta').mode('overwrite').save(Data_PATH_User + '/gold/members/')
+members_gold.write.format('delta').mode('overwrite').option('path', Data_PATH_User + '/gold/members/').saveAsTable(UserDB + '.members_gold')
 
 display(members_gold)
 
@@ -266,13 +273,13 @@ display(members_gold)
 
 # DBTITLE 1,Query Gold table using file path
 # MAGIC %sql
-# MAGIC SELECT * from delta.`/mnt/adbquickstart/gold/members/`
+# MAGIC SELECT * from delta.`${Data_PATH_User}/gold/members/` 
 
 # COMMAND ----------
 
-# DBTITLE 1,Query Gold table - 
+# DBTITLE 1,Query Gold table
 # MAGIC %sql
-# MAGIC select * from kkbox.members_gold
+# MAGIC select * from ${UserDB}.members_gold
 
 # COMMAND ----------
 
@@ -292,7 +299,7 @@ dbutils.notebook.exit("stop")
 # COMMAND ----------
 
 # Read the insertion of data
-members_gold_readStream = spark.readStream.format("delta").load('/mnt/adbquickstart/gold/members/')
+members_gold_readStream = spark.readStream.format("delta").load(Data_PATH_User + '/gold/members/')
 members_gold_readStream.createOrReplaceTempView("members_gold_readStream")
 
 # COMMAND ----------
@@ -310,7 +317,7 @@ import time
 i = 1
 while i <= 6:
   # Execute Insert statement
-  insert_sql = "INSERT INTO kkbox.members_gold VALUES (2004, 450000)"
+  insert_sql = "INSERT INTO {0}.members_gold VALUES (2004, 450000)".format(UserDB)
   spark.sql(insert_sql)
   print('members_gold_delta: inserted new row of data, loop: [%s]' % i)
     
@@ -332,13 +339,13 @@ while i <= 6:
 
 # MAGIC %sql
 # MAGIC -- Running `DELETE` on the Delta Lake table to remove records from year 2009
-# MAGIC DELETE FROM kkbox.members_gold WHERE years = 2009
+# MAGIC DELETE FROM ${UserDB}.members_gold WHERE years = 2009
 
 # COMMAND ----------
 
 # DBTITLE 1,Let's confirm the data is deleted for year 2009
 # MAGIC %sql
-# MAGIC SELECT * FROM kkbox.members_gold
+# MAGIC SELECT * FROM ${UserDB}.members_gold
 # MAGIC ORDER BY years
 
 # COMMAND ----------
@@ -349,12 +356,12 @@ while i <= 6:
 
 # DBTITLE 1,Let's update the count for year 2010
 # MAGIC %sql
-# MAGIC UPDATE kkbox.members_gold SET `count` = 50000 WHERE years = 2010
+# MAGIC UPDATE ${UserDB}.members_gold SET `count` = 50000 WHERE years = 2010
 
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC SELECT * FROM kkbox.members_gold
+# MAGIC SELECT * FROM ${UserDB}.members_gold
 # MAGIC ORDER BY years
 
 # COMMAND ----------
@@ -383,7 +390,7 @@ display(merge_table)
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC MERGE INTO kkbox.members_gold as d
+# MAGIC MERGE INTO ${UserDB}.members_gold as d
 # MAGIC USING merge_table as m
 # MAGIC on d.years = m.years
 # MAGIC WHEN MATCHED THEN 
@@ -395,7 +402,7 @@ display(merge_table)
 
 # DBTITLE 1,Perfect!! Let's check to make sure it worked
 # MAGIC %sql
-# MAGIC SELECT * FROM kkbox.members_gold
+# MAGIC SELECT * FROM ${UserDB}.members_gold
 # MAGIC ORDER BY years
 
 # COMMAND ----------
@@ -407,20 +414,19 @@ display(merge_table)
 # COMMAND ----------
 
 # DBTITLE 1,Generate a new "usage" column in a dummy table
-member_dummy = sql("SELECT years, count, CAST(rand(10) * 10 * count AS double) AS usage FROM kkbox.members_gold")
+member_dummy = spark.sql("SELECT years, count, CAST(rand(10) * 10 * count AS double) AS usage FROM {0}.members_gold".format(UserDB))
 display(member_dummy)
 
 # COMMAND ----------
 
-# DBTITLE 1,Merge it to the delta table
-# MAGIC %python
-# MAGIC # Add the mergeSchema option
-# MAGIC member_dummy.write.option("mergeSchema","true").format("delta").mode("append").save('/mnt/adbquickstart/gold/members/')
+# DBTITLE 1,Merge the schema to the delta table
+# Add the mergeSchema option
+member_dummy.write.option("mergeSchema","true").format("delta").mode("append").save(Data_PATH_User + '/gold/members/')
 
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC select * from kkbox.members_gold
+# MAGIC select * from ${UserDB}.members_gold
 
 # COMMAND ----------
 
@@ -445,7 +451,7 @@ display(member_dummy)
 
 # DBTITLE 1,Review Delta Lake Table History
 # MAGIC %sql
-# MAGIC DESCRIBE HISTORY kkbox.members_gold
+# MAGIC DESCRIBE HISTORY ${UserDB}.members_gold
 
 # COMMAND ----------
 
@@ -456,7 +462,7 @@ display(member_dummy)
 
 # DBTITLE 1,Let's look at the version 0 - When the table was created
 # MAGIC %sql
-# MAGIC SELECT * FROM kkbox.members_gold VERSION AS OF 0
+# MAGIC SELECT * FROM ${UserDB}.members_gold VERSION AS OF 0
 # MAGIC order by years
 
 # COMMAND ----------
@@ -467,28 +473,28 @@ display(member_dummy)
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC RESTORE TABLE kkbox.members_gold TO VERSION AS OF 9
+# MAGIC RESTORE TABLE ${UserDB}.members_gold TO VERSION AS OF 9
 
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC SELECT * FROM kkbox.members_gold
+# MAGIC SELECT * FROM ${UserDB}.members_gold
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Or even back shallow or deep clones of a table (backups or testing tables)
+# MAGIC ### Or even create shallow or deep clones of a table (backups or testing tables)
 
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC CREATE OR REPLACE TABLE delta.`/mnt/adbquickstart/gold/members_back/`
-# MAGIC DEEP CLONE delta.`/mnt/adbquickstart/gold/members/`
+# MAGIC CREATE OR REPLACE TABLE delta.`${Data_PATH_User}/gold/members_back/`
+# MAGIC DEEP CLONE delta.`${Data_PATH_User}/gold/members/`
 
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC SELECT * FROM delta.`/mnt/adbquickstart/gold/members_back/`
+# MAGIC SELECT * FROM delta.`${Data_PATH_User}/gold/members_back/`
 
 # COMMAND ----------
 
@@ -507,12 +513,12 @@ display(member_dummy)
 
 # COMMAND ----------
 
-# MAGIC %fs ls '/mnt/adbquickstart/gold/members/'
+dbutils.fs.ls(Data_PATH_User + '/gold/members/')
 
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC SELECT * FROM table_changes('kkbox.members_gold', 1)
+# MAGIC SELECT * FROM table_changes('${UserDB}.members_gold', 1)
 
 # COMMAND ----------
 
@@ -523,7 +529,7 @@ display(member_dummy)
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC CREATE TABLE kkbox.members_new
+# MAGIC CREATE TABLE ${UserDB}.members_new
 # MAGIC ( ID BIGINT GENERATED ALWAYS AS IDENTITY,
 # MAGIC   years STRING, 
 # MAGIC   count LONG
@@ -533,29 +539,23 @@ display(member_dummy)
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC INSERT INTO kkbox.members_new (years, count) TABLE member_gold
-
-# COMMAND ----------
-
-# DBTITLE 1,So our original table did not had a identity column
-# MAGIC %sql 
-# MAGIC select * from member_gold;
+# MAGIC INSERT INTO ${UserDB}.members_new (years, count) TABLE member_gold
 
 # COMMAND ----------
 
 # DBTITLE 1,Let's look at the identity column
 # MAGIC %sql 
-# MAGIC select * from kkbox.members_new;
+# MAGIC select * from ${UserDB}.members_new;
 
 # COMMAND ----------
 
 # DBTITLE 1,Finally !!! Lets End this with with some performance enhancement feature 
 # MAGIC %md #####  OPTIMIZE (Delta Lake on Databricks)
-# MAGIC Optimizes the layout of Delta Lake data. Optionally optimize a subset of data or colocate data by column. If you do not specify colocation, bin-packing optimization is performed.
+# MAGIC Optimizes the layout of Delta Lake data. Optionally, optimize a subset of data or colocate data by column. If you do not specify colocation, bin-packing optimization is performed.
 
 # COMMAND ----------
 
-# MAGIC %sql OPTIMIZE kkbox.user_log ZORDER BY (date)
+# MAGIC %sql OPTIMIZE ${UserDB}.user_log ZORDER BY (date)
 
 # COMMAND ----------
 
@@ -566,4 +566,9 @@ display(member_dummy)
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC ANALYZE TABLE kkbox.user_log COMPUTE STATISTICS;
+# MAGIC ANALYZE TABLE ${UserDB}.user_log COMPUTE STATISTICS;
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC ANALYZE TABLES IN ${UserDB} COMPUTE STATISTICS;

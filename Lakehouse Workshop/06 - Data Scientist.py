@@ -1,42 +1,49 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # Azure Databricks Quickstart for Data Scientist
-# MAGIC Welcome to the quickstart lab for data scientists on Azure Databricks! Over the course of this notebook, you will use a real-world dataset and learn how to:
+# MAGIC # Azure Databricks Lakehouse Labs for Data Scientist
+# MAGIC Welcome to the Lakehouse lab for data scientists on Azure Databricks! Over the course of this notebook, you will use a real-world dataset and learn how to:
 # MAGIC 1. Access your enterprise data lake in Azure using Databricks
-# MAGIC 2. Develop Machine Learning Model 
+# MAGIC 2. Develop Machine Learning Model using Auto ML  
 # MAGIC 3. Use MLFlow for end-to-end model management and lifecycle
 # MAGIC 
 # MAGIC #### The Use Case
-# MAGIC We will analyze public subscriber data from a popular Korean music streaming service called KKbox stored in Azure Blob Storage. The goal of the notebook is to answer a set of business-related questions about our business, subscribers and usage. 
+# MAGIC We will analyze public subscriber data from a popular Korean music streaming service called KKbox stored in Azure Blob Storage. The goal of the notebook is to **create a ML model that trys to predict users that might churn from the music streaming service**. 
 
 # COMMAND ----------
 
-dbutils.widgets.text("ACCOUNT_KEY", "", "ACCOUNT_KEY")
-dbutils.widgets.text("BLOB_CONTAINER", "", "BLOB_CONTAINER")
-dbutils.widgets.text("BLOB_ACCOUNT", "", "BLOB_ACCOUNT")
-dbutils.widgets.text("Databricks_Token", "", "Databricks_Token")
+# DBTITLE 1,Lakehouse Workshop Storage Variables
+# MAGIC %run "../Lakehouse Workshop/00 - Set Lab Variables"
 
 # COMMAND ----------
 
-BLOB_CONTAINER = dbutils.widgets.get("BLOB_CONTAINER")
-BLOB_ACCOUNT = dbutils.widgets.get("BLOB_ACCOUNT")
-ACCOUNT_KEY = dbutils.widgets.get("ACCOUNT_KEY")
-Databricks_Token = dbutils.widgets.get("Databricks_Token")
+# MAGIC %md
+# MAGIC ### Notebook Widgets
+# MAGIC The following notebook widgets are being created automatically for you and defaulted to your set variables for more easier parameterization of code.  
 
 # COMMAND ----------
 
-# DBTITLE 1,Mount Blob Storage to DBFS
-run = dbutils.notebook.run('./Setup Notebooks/00 - Setup Storage', 60, {"BLOB_CONTAINER" : BLOB_CONTAINER,"BLOB_ACCOUNT" : BLOB_ACCOUNT,"ACCOUNT_KEY" : ACCOUNT_KEY })
+dbutils.widgets.removeAll()
+
+# COMMAND ----------
+
+dbutils.widgets.text("UserDB", UserDB)
+
+# COMMAND ----------
+
+dbutils.widgets.text("Data_PATH_User", Data_PATH_User)
+
+# COMMAND ----------
+
+dbutils.widgets.text("Data_PATH_Ingest", Data_PATH_Ingest)
 
 # COMMAND ----------
 
 # DBTITLE 1,Install Libraries
-# MAGIC %run "../ADBQuickStartLabs/Setup Notebooks/00 - Libraries Setup"
-
-# COMMAND ----------
-
-# DBTITLE 1,Ingest Datasets
-# MAGIC %run "../ADBQuickStartLabs/Setup Notebooks/00 - Ingest Data ML"
+from pyspark.sql.types import *
+from pyspark.sql.functions import *
+from databricks.feature_store import *
+from pyspark.ml.feature import *
+from databricks import automl
 
 # COMMAND ----------
 
@@ -61,10 +68,10 @@ run = dbutils.notebook.run('./Setup Notebooks/00 - Setup Storage', 60, {"BLOB_CO
 # COMMAND ----------
 
 # DBTITLE 1,Load pre-loaded data
-transactions = spark.read.format("delta").load('/mnt/adbquickstart/bronze/transactions/') 
-members = spark.read.format("delta").load('/mnt/adbquickstart/bronze/members/')           
-user_logs = spark.read.format("delta").load('/mnt/adbquickstart/bronze/user_log/')
-train = spark.read.format("delta").load('/mnt/adbquickstart/bronze/train/')
+transactions = spark.read.format("delta").load(Data_PATH_User + '/bronze/transactions')
+members = spark.read.format("delta").load(Data_PATH_User + "/members")
+user_logs = spark.read.format("delta").load(Data_PATH_User + '/bronze/user_log/')
+train = spark.read.format("delta").load(Data_PATH_User + '/bronze/train')
 
 # COMMAND ----------
 
@@ -101,24 +108,22 @@ member_feature = member_feature.na.fill("NA", colNames)
 gender_index=StringIndexer().setInputCol("gender").setOutputCol("gender_indexed")
 member_feature=gender_index.fit(member_feature).transform(member_feature)
 
-member_feature.write.format('delta').mode('overwrite').option('mergeSchema','true').save('/mnt/adbquickstart/silver/member_feature')
+member_feature.write.format('delta').mode('overwrite').option('mergeSchema','true').save(Data_PATH_User + '/silver/member_feature')
 
 # create table object to make delta lake queriable
 spark.sql('''
-  CREATE TABLE IF NOT EXISTS kkbox.member_features
+  CREATE TABLE IF NOT EXISTS {0}.member_features
   USING DELTA 
-  LOCATION '/mnt/adbquickstart/silver/member_feature'
-  ''')
+  LOCATION "{1}/silver/member_feature"
+  '''.format(UserDB, Data_PATH_User))
 
 # COMMAND ----------
 
 # DBTITLE 1,Register member feature table
-from databricks.feature_store import feature_table
-
 fs = FeatureStoreClient()
 
 fs.register_table(
-  delta_table='kkbox.member_features',
+  delta_table= UserDB + '.member_features',
   primary_keys='msno',
   description='Member features commonly used in ML model'
 )
@@ -133,13 +138,13 @@ fs.register_table(
 
 # MAGIC %md
 # MAGIC ### Review features and their metadata.  See upstream and downstream feature lineage along with feature freshness
-# MAGIC <img src="https://publicimg.blob.core.windows.net/images/Feature Store UI.png" width="1200">
-# MAGIC <img src="https://publicimg.blob.core.windows.net/images/Feature Store UI2.png" width="1200">
+# MAGIC <img src="https://publicimg.blob.core.windows.net/images/NewLabImages/Feature Store UI.1.png" width="1200">
+# MAGIC <img src="https://publicimg.blob.core.windows.net/images/NewLabImages/Feature Store UI2.1.png" width="1200">
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 1b. Create and cleanse inference data
+# MAGIC ## 1b. Create and cleanse inference data + Feature Engineering
 
 # COMMAND ----------
 
@@ -165,14 +170,14 @@ churn_data = churn_data.drop(*columns_to_drop)
 colNames = ["gender"]
 churn_data = churn_data.na.fill("NA", colNames)
 
-churn_data.write.format('delta').mode('overwrite').option("mergeSchema","true").save('/mnt/adbquickstart/silver/churndata')
+churn_data.write.format('delta').mode('overwrite').option("mergeSchema","true").save(Data_PATH_User + '/silver/churndata')
 
 # create table object to make delta lake queriable
 spark.sql('''
-  CREATE TABLE IF NOT EXISTS kkbox.churndata
+  CREATE TABLE IF NOT EXISTS {0}.churndata
   USING DELTA 
-  LOCATION '/mnt/adbquickstart/silver/churndata'
-  ''')
+  LOCATION '{1}/silver/churndata'
+  '''.format(UserDB, Data_PATH_User))
 
 # COMMAND ----------
 
@@ -182,7 +187,7 @@ spark.sql('''
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC select * from kkbox.churndata
+# MAGIC select * from ${UserDB}.churndata
 
 # COMMAND ----------
 
@@ -191,13 +196,11 @@ spark.sql('''
 
 # COMMAND ----------
 
-from databricks.feature_store import FeatureLookup
-
 # The model training uses two features from the 'customer_features' feature table and
 # a single feature from 'product_features'
 feature_lookups = [
     FeatureLookup(
-      table_name = 'kkbox.member_features',
+      table_name = UserDB + '.member_features',
       feature_names = ['no_transactions','Total25','Total100','UniqueSongs','TotalSecHeard','city','bd','registered_via','registration_init_time','gender_indexed'],
       lookup_key = 'msno'
     )
@@ -206,25 +209,27 @@ feature_lookups = [
 fs = FeatureStoreClient()
 
 training_set = fs.create_training_set(
-  df=spark.read.table("kkbox.churndata"),
+  df=spark.read.table(UserDB + ".churndata"),
   feature_lookups = feature_lookups,
   label = 'is_churn',
   exclude_columns = ['msno']
 )
 
 training_df = training_set.load_df().where("registration_init_time is not null")
-display(training_df)
 
-# COMMAND ----------
-
-training_df.write.format('delta').mode('overwrite').option('mergeSchema','true').save('/mnt/adbquickstart/silver/trainingdata')
+training_df.write.format('delta').mode('overwrite').option('mergeSchema','true').save(Data_PATH_User + '/silver/trainingdata')
 
 # create table object to make delta lake queriable
 spark.sql('''
-  CREATE TABLE IF NOT EXISTS kkbox.trainingdata
+  CREATE TABLE IF NOT EXISTS {0}.trainingdata
   USING DELTA 
-  LOCATION '/mnt/adbquickstart/silver/trainingdata'
-  ''')
+  LOCATION '{1}/silver/trainingdata'
+  '''.format(UserDB, Data_PATH_User))
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC select * from ${UserDB}.trainingdata
 
 # COMMAND ----------
 
@@ -233,7 +238,7 @@ spark.sql('''
 
 # COMMAND ----------
 
-trainDF, testDF = spark.table('kkbox.trainingdata').randomSplit([.8, .2], seed=42)
+trainDF, testDF = spark.table(UserDB + '.trainingdata').randomSplit([.8, .2], seed=42)
 
 # COMMAND ----------
 
@@ -248,23 +253,21 @@ trainDF, testDF = spark.table('kkbox.trainingdata').randomSplit([.8, .2], seed=4
 
 # COMMAND ----------
 
-from databricks import automl
-
 summary = automl.classify(
   trainDF, 
   target_col="is_churn", 
   primary_metric="f1", 
-  timeout_minutes=5)
+  timeout_minutes=10)
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ### Azure Databricks AutoML runs can also be kicked off using the workspace UI
-# MAGIC <img src="https://publicimg.blob.core.windows.net/images/AutoML UI.png" width="1200">
+# MAGIC <img src="https://publicimg.blob.core.windows.net/images/NewLabImages/AutoML.png" width="1200">
 # MAGIC 
 # MAGIC ##Advanced options UI 
 # MAGIC 
-# MAGIC <img src="https://publicimg.blob.core.windows.net/images/AutoML UI Advanced.png" width="600">
+# MAGIC <img src="https://publicimg.blob.core.windows.net/images/NewLabImages/AutoML2.png" width="600">
 
 # COMMAND ----------
 
@@ -284,7 +287,10 @@ summary = automl.classify(
 # MAGIC 
 # MAGIC Now that a ML model has been trained and tracked with MLflow, the next step is to register it with the MLflow Model Registry. You can register and manage models using the MLflow UI (Workflow 1) or the MLflow API (Workflow 2).
 # MAGIC 
-# MAGIC Follow the instructions for your preferred workflow (UI or API) to register your forecasting model, add rich model descriptions, and perform stage transitions.
+# MAGIC Follow the instructions for your preferred workflow (UI or API) to register your forecasting model, add rich model descriptions, and perform stage transitions.  
+# MAGIC 
+# MAGIC You can open the notebook outline and skip to your preferred section....  
+# MAGIC <img src="https://publicimg.blob.core.windows.net/images/NewLabImages/MLFlow Workflows.png" width="200">
 
 # COMMAND ----------
 
@@ -358,7 +364,7 @@ print(summary.best_trial)
 # COMMAND ----------
 
 # Register the best model run
-model_name = "KKBox-Churn-Prediction"
+model_name = "KKBox-Churn-Prediction-" + UserDB
 
 model_uri = f"runs:/{summary.best_trial.mlflow_run_id}/model"
 
@@ -367,14 +373,13 @@ registered_model_version = mlflow.register_model(model_uri, model_name)
 # COMMAND ----------
 
 # DBTITLE 1,Add Model Description
-# MAGIC %python
-# MAGIC from mlflow.tracking.client import MlflowClient
-# MAGIC 
-# MAGIC client = MlflowClient()
-# MAGIC client.update_registered_model(
-# MAGIC   name=registered_model_version.name,
-# MAGIC   description="This model predicts churn of KKbox customers using an AutoML model."
-# MAGIC )
+from mlflow.tracking.client import MlflowClient
+
+client = MlflowClient()
+client.update_registered_model(
+  name=registered_model_version.name,
+  description="This model predicts churn of KKbox customers using an AutoML model."
+)
 
 # COMMAND ----------
 
@@ -414,7 +419,7 @@ registered_model_version = mlflow.register_model(model_uri, model_name)
 # MAGIC Now that the model is in Production we are ready for our next step - Model Serving
 # MAGIC For this workshop we will serve the model in two ways:
 # MAGIC 1. Use Production Model in a Downstream application - Batch Inference
-# MAGIC 2. MLflow Model Serving on Databricks
+# MAGIC 2. MLflow Model Serving on Databricks - Classic and Serverless
 # MAGIC 3. AKS and AML
 
 # COMMAND ----------
@@ -461,22 +466,22 @@ print(f"f1 on test dataset: {f1}")
 
 # COMMAND ----------
 
-goldDF = spark.table('kkbox.trainingdata')
+goldDF = spark.table(UserDB + '.trainingdata')
 goldDF = goldDF.withColumn("prediction", predict(*goldDF.drop("is_churn").columns))
 
-goldDF.write.format('delta').mode('overwrite').option('mergeSchema','true').save('/mnt/adbquickstart/gold/scoreddata')
+goldDF.write.format('delta').mode('overwrite').option('mergeSchema','true').save(Data_PATH_User + '/gold/scoreddata')
 
 # create table object to make delta lake queriable
 spark.sql('''
-  CREATE TABLE IF NOT EXISTS kkbox.scoreddata
+  CREATE TABLE IF NOT EXISTS {0}.scoreddata
   USING DELTA 
-  LOCATION '/mnt/adbquickstart/gold/scoreddata'
-  ''')
+  LOCATION '{1}/gold/scoreddata'
+  '''.format(UserDB, Data_PATH_User))
 
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC SELECT * FROM kkbox.scoreddata
+# MAGIC SELECT * FROM ${UserDB}.scoreddata
 
 # COMMAND ----------
 
@@ -496,6 +501,9 @@ spark.sql('''
 # MAGIC Enable MLflow Model Serving from UI
 # MAGIC 
 # MAGIC <img src="https://publicimg.blob.core.windows.net/images/Serving1.png" width="1400">
+# MAGIC 
+# MAGIC Depending on your workspace configuration, you may see serverless model serving as your main option   
+# MAGIC <img src="https://learn.microsoft.com/en-us/azure/databricks/_static/images/serverless-compute/serverless-models-enable-serving-pane.png" width="800">
 
 # COMMAND ----------
 
