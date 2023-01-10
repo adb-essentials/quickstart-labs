@@ -1,13 +1,13 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # Azure Databricks Quickstart for Data Scientist
-# MAGIC Welcome to the quickstart lab for data scientists on Azure Databricks! Over the course of this notebook, you will use a real-world dataset and learn how to:
+# MAGIC # Azure Databricks Lakehouse Labs for Data Scientist
+# MAGIC Welcome to the Lakehouse lab for data scientists on Azure Databricks! Over the course of this notebook, you will use a real-world dataset and learn how to:
 # MAGIC 1. Access your enterprise data lake in Azure using Databricks
-# MAGIC 2. Develop Machine Learning Model 
+# MAGIC 2. Develop Machine Learning Model using Auto ML  
 # MAGIC 3. Use MLFlow for end-to-end model management and lifecycle
 # MAGIC 
 # MAGIC #### The Use Case
-# MAGIC We will analyze public subscriber data from a popular Korean music streaming service called KKbox stored in Azure Blob Storage. The goal of the notebook is to answer a set of business-related questions about our business, subscribers and usage. 
+# MAGIC We will analyze public subscriber data from a popular Korean music streaming service called KKbox stored in Azure Blob Storage. The goal of the notebook is to **create a ML model that trys to predict users that might churn from the music streaming service**. 
 
 # COMMAND ----------
 
@@ -43,7 +43,7 @@ from pyspark.sql.types import *
 from pyspark.sql.functions import *
 from databricks.feature_store import *
 from pyspark.ml.feature import *
-import mlflow
+from databricks import automl
 
 # COMMAND ----------
 
@@ -138,13 +138,13 @@ fs.register_table(
 
 # MAGIC %md
 # MAGIC ### Review features and their metadata.  See upstream and downstream feature lineage along with feature freshness
-# MAGIC <img src="https://publicimg.blob.core.windows.net/images/Feature Store UI.png" width="1200">
-# MAGIC <img src="https://publicimg.blob.core.windows.net/images/Feature Store UI2.png" width="1200">
+# MAGIC <img src="https://publicimg.blob.core.windows.net/images/NewLabImages/Feature Store UI.1.png" width="1200">
+# MAGIC <img src="https://publicimg.blob.core.windows.net/images/NewLabImages/Feature Store UI2.1.png" width="1200">
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 1b. Create and cleanse inference data
+# MAGIC ## 1b. Create and cleanse inference data + Feature Engineering
 
 # COMMAND ----------
 
@@ -216,9 +216,6 @@ training_set = fs.create_training_set(
 )
 
 training_df = training_set.load_df().where("registration_init_time is not null")
-display(training_df)
-
-# COMMAND ----------
 
 training_df.write.format('delta').mode('overwrite').option('mergeSchema','true').save(Data_PATH_User + '/silver/trainingdata')
 
@@ -228,6 +225,11 @@ spark.sql('''
   USING DELTA 
   LOCATION '{1}/silver/trainingdata'
   '''.format(UserDB, Data_PATH_User))
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC select * from ${UserDB}.trainingdata
 
 # COMMAND ----------
 
@@ -251,23 +253,21 @@ trainDF, testDF = spark.table(UserDB + '.trainingdata').randomSplit([.8, .2], se
 
 # COMMAND ----------
 
-from databricks import automl
-
 summary = automl.classify(
   trainDF, 
   target_col="is_churn", 
   primary_metric="f1", 
-  timeout_minutes=5)
+  timeout_minutes=10)
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ### Azure Databricks AutoML runs can also be kicked off using the workspace UI
-# MAGIC <img src="https://publicimg.blob.core.windows.net/images/AutoML UI.png" width="1200">
+# MAGIC <img src="https://publicimg.blob.core.windows.net/images/NewLabImages/AutoML.png" width="1200">
 # MAGIC 
 # MAGIC ##Advanced options UI 
 # MAGIC 
-# MAGIC <img src="https://publicimg.blob.core.windows.net/images/AutoML UI Advanced.png" width="600">
+# MAGIC <img src="https://publicimg.blob.core.windows.net/images/NewLabImages/AutoML2.png" width="600">
 
 # COMMAND ----------
 
@@ -287,7 +287,10 @@ summary = automl.classify(
 # MAGIC 
 # MAGIC Now that a ML model has been trained and tracked with MLflow, the next step is to register it with the MLflow Model Registry. You can register and manage models using the MLflow UI (Workflow 1) or the MLflow API (Workflow 2).
 # MAGIC 
-# MAGIC Follow the instructions for your preferred workflow (UI or API) to register your forecasting model, add rich model descriptions, and perform stage transitions.
+# MAGIC Follow the instructions for your preferred workflow (UI or API) to register your forecasting model, add rich model descriptions, and perform stage transitions.  
+# MAGIC 
+# MAGIC You can open the notebook outline and skip to your preferred section....  
+# MAGIC <img src="https://publicimg.blob.core.windows.net/images/NewLabImages/MLFlow Workflows.png" width="200">
 
 # COMMAND ----------
 
@@ -416,7 +419,7 @@ client.update_registered_model(
 # MAGIC Now that the model is in Production we are ready for our next step - Model Serving
 # MAGIC For this workshop we will serve the model in two ways:
 # MAGIC 1. Use Production Model in a Downstream application - Batch Inference
-# MAGIC 2. MLflow Model Serving on Databricks
+# MAGIC 2. MLflow Model Serving on Databricks - Classic and Serverless
 # MAGIC 3. AKS and AML
 
 # COMMAND ----------
@@ -498,6 +501,9 @@ spark.sql('''
 # MAGIC Enable MLflow Model Serving from UI
 # MAGIC 
 # MAGIC <img src="https://publicimg.blob.core.windows.net/images/Serving1.png" width="1400">
+# MAGIC 
+# MAGIC Depending on your workspace configuration, you may see serverless model serving as your main option   
+# MAGIC <img src="https://learn.microsoft.com/en-us/azure/databricks/_static/images/serverless-compute/serverless-models-enable-serving-pane.png" width="800">
 
 # COMMAND ----------
 
