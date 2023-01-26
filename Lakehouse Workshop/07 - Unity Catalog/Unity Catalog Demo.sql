@@ -256,7 +256,6 @@ grant usage on database uc_demo.uc_demo_db to `LeoTestGroup`;
 grant usage on database uc_demo.default to `LeoTestGroup`;
 grant select on table uc_demo.uc_demo_db.transactions to `LeoTestGroup`;
 grant select on table uc_demo.uc_demo_db.members to `LeoTestGroup`;
--- grant select on table uc_demo.uc_demo_db.uc_demo_external_table to `LeoTestGroup`;
 
 -- COMMAND ----------
 

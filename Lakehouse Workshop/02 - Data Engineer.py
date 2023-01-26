@@ -39,8 +39,6 @@ dbutils.widgets.text("Data_PATH_Ingest", Data_PATH_Ingest)
 # COMMAND ----------
 
 # DBTITLE 1,Delete existing files
-#import shutil
-# pyspark.sql.types import *
 # delete the old database and tables if needed
 _ = spark.sql('DROP DATABASE IF EXISTS {0} CASCADE'.format(UserDB))
 
@@ -518,7 +516,7 @@ dbutils.fs.ls(Data_PATH_User + '/gold/members/')
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC SELECT * FROM table_changes('${UserDB}.members_gold', 1)
+# MAGIC SELECT * FROM table_changes('${UserDB}.members_gold', 1) 
 
 # COMMAND ----------
 
@@ -572,3 +570,7 @@ dbutils.fs.ls(Data_PATH_User + '/gold/members/')
 
 # MAGIC %sql
 # MAGIC ANALYZE TABLES IN ${UserDB} COMPUTE STATISTICS;
+
+# COMMAND ----------
+
+

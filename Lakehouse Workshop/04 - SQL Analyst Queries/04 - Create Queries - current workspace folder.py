@@ -4,7 +4,7 @@
 
 # COMMAND ----------
 
-# %run "/Repos/leo.furlong@databricks.com/quickstart-labs/Lakehouse Workshop/00 - Set Lab Variables"
+# %run "/Repos/leo.furlong@databricks.com/Lakehouse-Workshop/Lakehouse Workshop/00 - Set Lab Variables"
 
 # COMMAND ----------
 
@@ -17,23 +17,11 @@ import requests
 
 # COMMAND ----------
 
-User = dbutils.notebook.entry_point.getDbutils().notebook().getContext().tags().get("user").getOrElse(None)
+notebookPath = dbutils.notebook.entry_point.getDbutils().notebook().getContext().notebookPath().getOrElse(None)
 
 # COMMAND ----------
 
-folderPath = { "path": "/Users/" + User + "/04 - Lakehouse Lab Queries" }
-
-# COMMAND ----------
-
-folderPath
-
-# COMMAND ----------
-
-response = requests.post(
-  'https://%s/api/2.0/workspace/mkdirs' % (Workspace),
-  headers={'Authorization': 'Bearer %s' % Databricks_Token},
-  json=folderPath
-)
+folderPath = { "path": notebookPath.replace("/04 - Create Queries","") }
 
 # COMMAND ----------
 
@@ -121,13 +109,13 @@ datasource = response.json()[0]["id"]
 # ANALYZE TABLE {0}.user_log COMPUTE STATISTICS; 
 
 # -- Cache our tables to the result set cache
-# CACHE SELECT * FROM {0}.churn;
+# SELECT * FROM {0}.churn;
 
-# CACHE SELECT * FROM {0}.transactions;
+# SELECT * FROM {0}.transactions;
 
-# CACHE SELECT * FROM {0}.members;
+# SELECT * FROM {0}.members;
 
-# CACHE SELECT * FROM {0}.user_log; 
+# SELECT * FROM {0}.user_log; 
 #   """.format(UserDB, Data_PATH_Ingest, Data_PATH_User),
 #   "name": "Step 0. Copy Into, Optimize, and Analyze",
 #   "description": "Create Database, Tables, and run optimizations.",
