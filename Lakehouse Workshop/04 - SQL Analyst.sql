@@ -113,7 +113,7 @@
 -- MAGIC View query results, or create data visualizations directly in the UI  
 -- MAGIC Schedule refreshes of your queries so that the results are always up to date  
 -- MAGIC 
--- MAGIC <img src="https://publicimg.blob.core.windows.net/images/DBSQL6.png" width="1200">
+-- MAGIC <img src="https://publicimg.blob.core.windows.net/images/NewLabImages/DBSQL10.png" width="1200">
 
 -- COMMAND ----------
 

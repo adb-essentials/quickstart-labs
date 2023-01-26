@@ -44,6 +44,7 @@ from pyspark.sql.functions import *
 from databricks.feature_store import *
 from pyspark.ml.feature import *
 from databricks import automl
+import mlflow
 
 # COMMAND ----------
 

@@ -58,10 +58,6 @@ Workspace = dbutils.notebook.entry_point.getDbutils().notebook().getContext().ta
 
 # COMMAND ----------
 
-
-
-# COMMAND ----------
-
 from pyspark.sql.types import *
 from pyspark.sql.functions import *
 
@@ -88,7 +84,7 @@ count = df.count()
 # COMMAND ----------
 
 if count < 5:
-  dbutils.notebook.run('./00 - Setup Notebooks/00 - Download Data', 300, {"Data_PATH_Ingest": Data_PATH_Ingest, "Data_PATH_User": Data_PATH_User, "UserDB": UserDB })
+  dbutils.notebook.run('./00 - Setup Notebooks/00 - Download Data', 600, {"Data_PATH_Ingest": Data_PATH_Ingest, "Data_PATH_User": Data_PATH_User, "UserDB": UserDB })
   print('Data was downloaded')
 
 else:
@@ -104,3 +100,7 @@ else:
 # MAGIC 3. [SAS Tokens](https://learn.microsoft.com/en-us/azure/databricks/external-data/azure-storage#access-azure-data-lake-storage-gen2-or-blob-storage-using-a-sas-token)
 # MAGIC 4. [Storage Mount](https://learn.microsoft.com/en-us/azure/databricks/dbfs/mounts) **no longer recommended**
 # MAGIC 5. [Credential Passthrough](https://learn.microsoft.com/en-us/azure/databricks/data-governance/credential-passthrough/adls-passthrough) **no longer recommended**
+
+# COMMAND ----------
+
+
