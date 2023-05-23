@@ -291,7 +291,7 @@ summary = automl.classify(
 # MAGIC Follow the instructions for your preferred workflow (UI or API) to register your forecasting model, add rich model descriptions, and perform stage transitions.  
 # MAGIC
 # MAGIC You can open the notebook outline and skip to your preferred section....  
-# MAGIC <img src="https://raw.githubusercontent.com/adb-essentials/quickstart-labs/main/images/MLFlow Workflows.png" width="200">
+# MAGIC <img src="https://raw.githubusercontent.com/adb-essentials/quickstart-labs/main/images/MLFlowWorkflows.png" width="200">
 
 # COMMAND ----------
 
