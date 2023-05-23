@@ -26,7 +26,7 @@
 
 -- MAGIC %md
 -- MAGIC ### Download the Power BI Desktop file to your Windows OS  
--- MAGIC https://raw.githubusercontent.com/adb-essentials/quickstart-labs/raw/main/Lakehouse%20Workshop/05%20-%20BI%20Developer%20Reports/Lakehouse%20Labs%20Power%20BI%20DLT%20Demo.pbit  
+-- MAGIC https://github.com/adb-essentials/quickstart-labs/raw/main/Lakehouse%20Workshop/05%20-%20BI%20Developer%20Reports/Lakehouse%20Labs%20Power%20BI%20DLT%20Demo.pbit 
 
 -- COMMAND ----------
 
