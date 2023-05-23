@@ -12,7 +12,7 @@
 
 -- MAGIC %md
 -- MAGIC ### Delta Live Tables Simplifies your Batch and Streaming ETL Pipelines  
--- MAGIC <img src="https://publicimg.blob.core.windows.net/images/DLT0.png" width="1200">
+-- MAGIC <img src="https://github.com/adb-essentials/quickstart-labs/blob/c8be0896dc688c045ec3866e1fc744981f47b844/DLT0.png" width="1200">
 
 -- COMMAND ----------
 
@@ -25,7 +25,7 @@
 -- MAGIC ### Browse the Delta Live Tables code in the following notebook  
 -- MAGIC ..Lakehouse Workshop/03 - DLT Demo/DLT Code
 -- MAGIC 
--- MAGIC <img src="https://publicimg.blob.core.windows.net/images/NewLabImages/DLTCode1.1.png" width="700">
+-- MAGIC <img src="https://github.com/adb-essentials/quickstart-labs/blob/c8be0896dc688c045ec3866e1fc744981f47b844/NewLabImages/DLTCode1.1.png" width="700">
 
 -- COMMAND ----------
 
@@ -36,13 +36,13 @@
 
 -- MAGIC %md
 -- MAGIC ### Navigate to Databricks Workflows
--- MAGIC <img src="https://publicimg.blob.core.windows.net/images/DLT1.png" width="150">
+-- MAGIC <img src="https://github.com/adb-essentials/quickstart-labs/blob/c8be0896dc688c045ec3866e1fc744981f47b844/DLT1.png" width="150">
 
 -- COMMAND ----------
 
 -- MAGIC %md
 -- MAGIC ### Create a new Delta Live Tables Pipeline  
--- MAGIC <img src="https://publicimg.blob.core.windows.net/images/NewLabImages/DLT2.1.png" width="600">
+-- MAGIC <img src="https://github.com/adb-essentials/quickstart-labs/blob/c8be0896dc688c045ec3866e1fc744981f47b844/NewLabImages/DLT2.1.png" width="600">
 
 -- COMMAND ----------
 
@@ -65,17 +65,17 @@
 -- MAGIC 
 -- MAGIC ***`variables` found from executing the ../Lakehouse Workshop/00 - Set Lab Variables notebook.***  
 -- MAGIC 
--- MAGIC <img src="https://publicimg.blob.core.windows.net/images/NewLabImages/DLT3.1.png" width="500">  
--- MAGIC <img src="https://publicimg.blob.core.windows.net/images/NewLabImages/DLT4.1.png" width="500">
+-- MAGIC <img src="https://github.com/adb-essentials/quickstart-labs/blob/c8be0896dc688c045ec3866e1fc744981f47b844/NewLabImages/DLT3.1.png" width="500">  
+-- MAGIC <img src="https://github.com/adb-essentials/quickstart-labs/blob/c8be0896dc688c045ec3866e1fc744981f47b844/NewLabImages/DLT4.1.png" width="500">
 
 -- COMMAND ----------
 
 -- MAGIC %md
 -- MAGIC ### Start your new DLT pipeline  
--- MAGIC <img src="https://publicimg.blob.core.windows.net/images/NewLabImages/DLT5.1.png" width="1200">
+-- MAGIC <img src="https://github.com/adb-essentials/quickstart-labs/blob/c8be0896dc688c045ec3866e1fc744981f47b844/NewLabImages/DLT5.1.png" width="1200">
 
 -- COMMAND ----------
 
 -- MAGIC %md
 -- MAGIC ### Browse the lineage and data quality information of your completed DLT pipeline  
--- MAGIC <img src="https://publicimg.blob.core.windows.net/images/NewLabImages/DLT6.1.png" width="1200">
+-- MAGIC <img src="https://github.com/adb-essentials/quickstart-labs/blob/c8be0896dc688c045ec3866e1fc744981f47b844/NewLabImages/DLT6.1.png" width="1200">
