@@ -52,7 +52,7 @@ _ = spark.sql('CREATE DATABASE {0} LOCATION "{1}"'.format(UserDB, Data_PATH_User
 # MAGIC %md
 # MAGIC <!-- #DATA ENGINEERING AND STREAMING ARCHITECTURE -->
 # MAGIC <!-- <img src="https://kpistoropen.blob.core.windows.net/collateral/quickstart/etl.png" width=1500> -->
-# MAGIC <img src="https://github.com/adb-essentials/quickstart-labs/blob/c8be0896dc688c045ec3866e1fc744981f47b844/images/DE and Streaming.png" width="1200">
+# MAGIC <img src="https://raw.githubusercontent.com/adb-essentials/quickstart-labs/blob/c8be0896dc688c045ec3866e1fc744981f47b844/images/DE and Streaming.png" width="1200">
 
 # COMMAND ----------
 
