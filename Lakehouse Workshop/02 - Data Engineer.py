@@ -5,7 +5,7 @@
 # MAGIC 1. Access your enterprise data lake in Azure using Databricks
 # MAGIC 2. Transform and store your data in a reliable and performant Delta Lake
 # MAGIC 3. Use Update,Delete,Merge,Schema Evolution and Time Travel Capabilities, CDF (Change Data Feed) of Delta Lake
-# MAGIC 
+# MAGIC
 # MAGIC ## The Use Case
 # MAGIC We will analyze public subscriber data from a popular Korean music streaming service called KKbox stored in Azure Blob Storage. The goal of the notebook is to answer a set of business-related questions about our business, subscribers and usage. 
 
@@ -52,7 +52,7 @@ _ = spark.sql('CREATE DATABASE {0} LOCATION "{1}"'.format(UserDB, Data_PATH_User
 # MAGIC %md
 # MAGIC <!-- #DATA ENGINEERING AND STREAMING ARCHITECTURE -->
 # MAGIC <!-- <img src="https://kpistoropen.blob.core.windows.net/collateral/quickstart/etl.png" width=1500> -->
-# MAGIC <img src="https://raw.githubusercontent.com/adb-essentials/quickstart-labs/blob/c8be0896dc688c045ec3866e1fc744981f47b844/images/DE and Streaming.png" width="1200">
+# MAGIC <img src="https://raw.githubusercontent.com/adb-essentials/quickstart-labs/c8be0896dc688c045ec3866e1fc744981f47b844/images/DEandStreaming.png" width="1200">
 
 # COMMAND ----------
 
@@ -72,15 +72,15 @@ dbutils.fs.ls(Data_PATH_User)
 # MAGIC %md
 # MAGIC ### Explore Your Data
 # MAGIC In 2018, [KKBox](https://www.kkbox.com/) - a popular music streaming service based in Taiwan - released a [dataset](https://www.kaggle.com/c/kkbox-churn-prediction-challenge/data) consisting of a little over two years of (anonymized) customer transaction and activity data with the goal of challenging the Data & AI community to predict which customers would churn in a future period.  
-# MAGIC 
+# MAGIC
 # MAGIC The primary data files are organized in the storage container:
-# MAGIC 
+# MAGIC
 # MAGIC <img src='https://brysmiwasb.blob.core.windows.net/demos/images/kkbox_filedownloads.png' width=150>
-# MAGIC 
+# MAGIC
 # MAGIC Read into dataframes, these files form the following data model:
-# MAGIC 
+# MAGIC
 # MAGIC <img src='https://brysmiwasb.blob.core.windows.net/demos/images/kkbox_schema.png' width=150>
-# MAGIC 
+# MAGIC
 # MAGIC Each subscriber is uniquely identified by a value in the `msno` field of the `members` table. Data in the `transactions` and `user_logs` tables provide a record of subscription management and streaming activities, respectively.  
 
 # COMMAND ----------
@@ -152,9 +152,9 @@ dbutils.fs.ls(Data_PATH_User + '/bronze/transactions/transaction_date=2015-01-09
 # MAGIC %md
 # MAGIC ####Auto Loader, COPY INTO and Incrementally Ingesting Data
 # MAGIC Auto Loader and COPY INTO are two methods of ingesting data into a Delta Lake table from a folder in a Data Lake. “Yeah, so... Why is that so special?”, you may ask. The reason these features are special is that they make it possible to ingest data directly from a data lake incrementally, in an idempotent way, without needing a distributed streaming system like Kafka. This can considerably simplify the Incremental ETL process. It is also an extremely efficient way to ingest data since you are only ingesting new data and not reprocessing data that already exists. Below is an Incremental ETL architecture. We will focus on the left hand side, ingesting into tables from outside sources. 
-# MAGIC 
+# MAGIC
 # MAGIC You can incrementally ingest data either continuously or scheduled in a job. COPY INTO and Auto Loader cover both cases and we will show you how below.
-# MAGIC 
+# MAGIC
 # MAGIC <img src="https://databricks.com/wp-content/uploads/2021/07/get-start-delta-blog-img-1.png" width=1000>
 
 # COMMAND ----------
@@ -282,9 +282,9 @@ display(members_gold)
 # COMMAND ----------
 
 # MAGIC %md 
-# MAGIC 
+# MAGIC
 # MAGIC ### Delta as Unified Batch and Streaming Source and Sink
-# MAGIC 
+# MAGIC
 # MAGIC These cells showcase streaming and batch concurrent queries (inserts and reads)
 # MAGIC * This notebook will run an `INSERT` every 10s against our `members_gold` table
 # MAGIC * We will run two streaming queries concurrently against this data and update the table
@@ -365,9 +365,9 @@ while i <= 6:
 # COMMAND ----------
 
 # MAGIC %md ###MERGE INTO Support
-# MAGIC 
+# MAGIC
 # MAGIC #### INSERT or UPDATE with Delta Lake: 2-step process
-# MAGIC 
+# MAGIC
 # MAGIC With Delta Lake, inserting or updating a table is a simple 2-step process: 
 # MAGIC 1. Identify rows to insert or update
 # MAGIC 2. Use the `MERGE` command
@@ -430,19 +430,19 @@ member_dummy.write.option("mergeSchema","true").format("delta").mode("append").s
 
 # MAGIC %md ###Let's Travel back in Time!
 # MAGIC Databricks Delta’s time travel capabilities simplify building data pipelines for the following use cases. 
-# MAGIC 
+# MAGIC
 # MAGIC * Audit Data Changes
 # MAGIC * Reproduce experiments & reports
 # MAGIC * Rollbacks
-# MAGIC 
+# MAGIC
 # MAGIC As you write into a Delta table or directory, every operation is automatically versioned.
-# MAGIC 
+# MAGIC
 # MAGIC You can query by:
 # MAGIC 1. Using a timestamp
 # MAGIC 1. Using a version number
-# MAGIC 
+# MAGIC
 # MAGIC using Python, Scala, and/or Scala syntax; for these examples we will use the SQL syntax.  
-# MAGIC 
+# MAGIC
 # MAGIC For more information, refer to [Introducing Delta Time Travel for Large Scale Data Lakes](https://databricks.com/blog/2019/02/04/introducing-delta-time-travel-for-large-scale-data-lakes.html)
 
 # COMMAND ----------
@@ -499,14 +499,14 @@ member_dummy.write.option("mergeSchema","true").format("delta").mode("append").s
 # DBTITLE 0,Simplify Your Medallion Architecture with Delta Lake’s CDF Featurentitled
 # MAGIC %md 
 # MAGIC ### Simplify Your Medallion Architecture with Delta Lake’s CDF Feature
-# MAGIC 
+# MAGIC
 # MAGIC ### Overview
 # MAGIC The medallion architecture takes raw data landed from source systems and refines the data through bronze, silver and gold tables. It is an architecture that the MERGE operation and log versioning in Delta Lake make possible. Change data capture (CDC) is a use case that we see many customers implement in Databricks. We are happy to announce an exciting new Change data feed (CDF) feature in Delta Lake that makes this architecture even simpler to implement!
-# MAGIC 
+# MAGIC
 # MAGIC The following example ingests financial data. Estimated Earnings Per Share (EPS) is financial data from analysts predicting what a company’s quarterly earnings per share will be. The raw data can come from many different sources and from multiple analysts for multiple stocks. The data is simply inserted into the bronze table, it will  change in the silver and then aggregate values need to be recomputed in the gold table based on the changed data in the silver. 
-# MAGIC 
+# MAGIC
 # MAGIC While these transformations can get complex, thankfully now the row based CDF feature can be simple and efficient but how do you use it? Let’s dig in!
-# MAGIC 
+# MAGIC
 # MAGIC <img src="https://databricks.com/wp-content/uploads/2021/05/cdf-blog-img-1-rev.png" width=600>
 
 # COMMAND ----------
