@@ -68,6 +68,11 @@ import mlflow
 
 # COMMAND ----------
 
+# DBTITLE 1,Load training data
+# MAGIC %run "../Lakehouse Workshop/00 - Setup Notebooks/00 - Setup Bronze Data ML"
+
+# COMMAND ----------
+
 # DBTITLE 1,Load pre-loaded data
 transactions = spark.read.format("delta").load(Data_PATH_User + '/bronze/transactions')
 members = spark.read.format("delta").load(Data_PATH_User + "/members")
