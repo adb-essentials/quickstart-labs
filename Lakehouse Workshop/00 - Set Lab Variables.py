@@ -100,7 +100,3 @@ else:
 # MAGIC 3. [SAS Tokens](https://learn.microsoft.com/en-us/azure/databricks/external-data/azure-storage#access-azure-data-lake-storage-gen2-or-blob-storage-using-a-sas-token)
 # MAGIC 4. [Storage Mount](https://learn.microsoft.com/en-us/azure/databricks/dbfs/mounts) **no longer recommended**
 # MAGIC 5. [Credential Passthrough](https://learn.microsoft.com/en-us/azure/databricks/data-governance/credential-passthrough/adls-passthrough) **no longer recommended**
-
-# COMMAND ----------
-
-

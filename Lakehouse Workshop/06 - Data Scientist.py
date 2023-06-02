@@ -5,7 +5,7 @@
 # MAGIC 1. Access your enterprise data lake in Azure using Databricks
 # MAGIC 2. Develop Machine Learning Model using Auto ML  
 # MAGIC 3. Use MLFlow for end-to-end model management and lifecycle
-# MAGIC 
+# MAGIC
 # MAGIC #### The Use Case
 # MAGIC We will analyze public subscriber data from a popular Korean music streaming service called KKbox stored in Azure Blob Storage. The goal of the notebook is to **create a ML model that trys to predict users that might churn from the music streaming service**. 
 
@@ -50,14 +50,14 @@ import mlflow
 
 # DBTITLE 0,ML Architecture
 # MAGIC %md
-# MAGIC <!-- <img src="https://publicimg.blob.core.windows.net/images/DS.png" width="1200"> -->
-# MAGIC <img src="https://publicimg.blob.core.windows.net/images/DatabricksML.png" width="1200">
+# MAGIC <!-- <img src="https://raw.githubusercontent.com/adb-essentials/quickstart-labs/main/images/DS.png" width="1200"> -->
+# MAGIC <img src="https://raw.githubusercontent.com/adb-essentials/quickstart-labs/main/images/DatabricksML.png" width="1200">
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## Databricks Machine Learning is a data native solution that enables data scientists to do end-to-end ML/DS in one single platform without moving data or code to different platforms.
-# MAGIC 
+# MAGIC
 # MAGIC The journey of a data science project starts from accessing the data, understanding the data and then moving on to steps such as feature engineering, feature store creation/maintenance, model creation, model management and finally model serving. Using Databricks one can accomplish all the steps at one place.
 
 # COMMAND ----------
@@ -65,6 +65,11 @@ import mlflow
 # MAGIC %md
 # MAGIC ## 1. Get, Prepare, Enhance and Explore Data
 # MAGIC ###Persona: Data Scientists, Data Engineers
+
+# COMMAND ----------
+
+# DBTITLE 1,Load training data
+# MAGIC %run "../Lakehouse Workshop/00 - Setup Notebooks/00 - Setup Bronze Data ML"
 
 # COMMAND ----------
 
@@ -82,7 +87,7 @@ train = spark.read.format("delta").load(Data_PATH_User + '/bronze/train')
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC <img src="https://publicimg.blob.core.windows.net/images/FeatureStore.png" width="1200">
+# MAGIC <img src="https://raw.githubusercontent.com/adb-essentials/quickstart-labs/main/images/FeatureStore.png" width="1200">
 
 # COMMAND ----------
 
@@ -133,14 +138,14 @@ fs.register_table(
 
 # MAGIC %md
 # MAGIC ### Browse available Feature Tables in the Databricks Feature Store
-# MAGIC <img src="https://publicimg.blob.core.windows.net/images/Feature Store Seach.png" width="1200">
+# MAGIC <img src="https://raw.githubusercontent.com/adb-essentials/quickstart-labs/main/images/FeatureStoreSearch.png" width="1200">
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ### Review features and their metadata.  See upstream and downstream feature lineage along with feature freshness
-# MAGIC <img src="https://publicimg.blob.core.windows.net/images/NewLabImages/Feature Store UI.1.png" width="1200">
-# MAGIC <img src="https://publicimg.blob.core.windows.net/images/NewLabImages/Feature Store UI2.1.png" width="1200">
+# MAGIC <img src="https://raw.githubusercontent.com/adb-essentials/quickstart-labs/main/images/FeatureStoreUI.1.png" width="1200">
+# MAGIC <img src="https://raw.githubusercontent.com/adb-essentials/quickstart-labs/main/images/FeatureStoreUI2.1.png" width="1200">
 
 # COMMAND ----------
 
@@ -250,7 +255,7 @@ trainDF, testDF = spark.table(UserDB + '.trainingdata').randomSplit([.8, .2], se
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC <img src="https://publicimg.blob.core.windows.net/images/Automl.png" width="1200">
+# MAGIC <img src="https://raw.githubusercontent.com/adb-essentials/quickstart-labs/main/images/AutoML.png" width="1200">
 
 # COMMAND ----------
 
@@ -264,11 +269,11 @@ summary = automl.classify(
 
 # MAGIC %md
 # MAGIC ### Azure Databricks AutoML runs can also be kicked off using the workspace UI
-# MAGIC <img src="https://publicimg.blob.core.windows.net/images/NewLabImages/AutoML.png" width="1200">
-# MAGIC 
+# MAGIC <img src="https://raw.githubusercontent.com/adb-essentials/quickstart-labs/main/images/AutoML.png" width="1200">
+# MAGIC
 # MAGIC ##Advanced options UI 
-# MAGIC 
-# MAGIC <img src="https://publicimg.blob.core.windows.net/images/NewLabImages/AutoML2.png" width="600">
+# MAGIC
+# MAGIC <img src="https://raw.githubusercontent.com/adb-essentials/quickstart-labs/main/images/AutoML2.png" width="600">
 
 # COMMAND ----------
 
@@ -280,18 +285,18 @@ summary = automl.classify(
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC <img src="https://publicimg.blob.core.windows.net/images/MLflow.png" width="1400">
+# MAGIC <img src="https://raw.githubusercontent.com/adb-essentials/quickstart-labs/main/images/MLflow.png" width="1400">
 
 # COMMAND ----------
 
 # MAGIC %md #### Register the model with the MLflow Model Registry
-# MAGIC 
+# MAGIC
 # MAGIC Now that a ML model has been trained and tracked with MLflow, the next step is to register it with the MLflow Model Registry. You can register and manage models using the MLflow UI (Workflow 1) or the MLflow API (Workflow 2).
-# MAGIC 
+# MAGIC
 # MAGIC Follow the instructions for your preferred workflow (UI or API) to register your forecasting model, add rich model descriptions, and perform stage transitions.  
-# MAGIC 
+# MAGIC
 # MAGIC You can open the notebook outline and skip to your preferred section....  
-# MAGIC <img src="https://publicimg.blob.core.windows.net/images/NewLabImages/MLFlow Workflows.png" width="200">
+# MAGIC <img src="https://raw.githubusercontent.com/adb-essentials/quickstart-labs/main/images/MLFlowWorkflows.png" width="200">
 
 # COMMAND ----------
 
@@ -302,55 +307,55 @@ summary = automl.classify(
 
 # DBTITLE 1,Navigate to AutoML Experiments
 # MAGIC %md
-# MAGIC <img src="https://publicimg.blob.core.windows.net/images/NewMLImages/ML0.png" width="800">
+# MAGIC <img src="https://raw.githubusercontent.com/adb-essentials/quickstart-labs/main/images/ML0.png" width="800">
 
 # COMMAND ----------
 
 # DBTITLE 1,Let's Click the Experiment and see all the runs we have for the model
 # MAGIC %md
-# MAGIC <img src="https://publicimg.blob.core.windows.net/images/NewMLImages/ML1.png" width="1400">
+# MAGIC <img src="https://raw.githubusercontent.com/adb-essentials/quickstart-labs/main/images/ML1.png" width="1400">
 
 # COMMAND ----------
 
 # DBTITLE 1,When you click "model" under artifacts click "Register Model" to register the particular model
 # MAGIC %md
-# MAGIC <img src="https://publicimg.blob.core.windows.net/images/NewMLImages/ML2.png" width="1400">
+# MAGIC <img src="https://raw.githubusercontent.com/adb-essentials/quickstart-labs/main/images/ML2.png" width="1400">
 
 # COMMAND ----------
 
 # DBTITLE 1,Give the model a name
 # MAGIC %md
-# MAGIC <img src="https://publicimg.blob.core.windows.net/images/NewMLImages/ML3.png" width="600">
+# MAGIC <img src="https://raw.githubusercontent.com/adb-essentials/quickstart-labs/main/images/ML3.png" width="600">
 
 # COMMAND ----------
 
 # DBTITLE 1,Click "Models on the left Nav to get the list of all Registered model. Click the Model we just saved
 # MAGIC %md
-# MAGIC <img src="https://publicimg.blob.core.windows.net/images/NewMLImages/ML4.png" width="1400">
+# MAGIC <img src="https://raw.githubusercontent.com/adb-essentials/quickstart-labs/main/images/ML4.png" width="1400">
 
 # COMMAND ----------
 
 # DBTITLE 1,You can see the various versions of the model. Click the version you want to move into production
 # MAGIC %md
-# MAGIC <img src="https://publicimg.blob.core.windows.net/images/NewMLImages/ML5.png" width="1200">
+# MAGIC <img src="https://raw.githubusercontent.com/adb-essentials/quickstart-labs/main/images/ML5.png" width="1200">
 
 # COMMAND ----------
 
 # DBTITLE 1,Click "Stage" to move model through various stages
 # MAGIC %md
-# MAGIC <img src="https://publicimg.blob.core.windows.net/images/NewMLImages/ML6.png" width="1200">
+# MAGIC <img src="https://raw.githubusercontent.com/adb-essentials/quickstart-labs/main/images/ML6.png" width="1200">
 
 # COMMAND ----------
 
 # DBTITLE 1,Moving the Model to production
 # MAGIC %md
-# MAGIC <img src="https://publicimg.blob.core.windows.net/images/NewMLImages/ML7.png" width="600">
+# MAGIC <img src="https://raw.githubusercontent.com/adb-essentials/quickstart-labs/main/images/ML7.png" width="600">
 
 # COMMAND ----------
 
 # DBTITLE 1,Once Done come back and check the models page to see the model has been moved to production !!!
 # MAGIC %md
-# MAGIC <img src="https://publicimg.blob.core.windows.net/images/NewMLImages/ML8.png" width="1400">
+# MAGIC <img src="https://raw.githubusercontent.com/adb-essentials/quickstart-labs/main/images/ML8.png" width="1400">
 
 # COMMAND ----------
 
@@ -385,13 +390,13 @@ client.update_registered_model(
 # COMMAND ----------
 
 # MAGIC %md ### Perform a model stage transition
-# MAGIC 
+# MAGIC
 # MAGIC The MLflow Model Registry defines several model stages: `None`, `Staging`, `Production`, and `Archived`. Each stage has a unique meaning. For example, `Staging` is meant for model testing, while `Production` is for models that have completed the testing or review processes and have been deployed to applications. 
-# MAGIC 
+# MAGIC
 # MAGIC Users with appropriate permissions can transition models between stages. Your administrators in your organization will be able to control these permissions on a per-user and per-model basis.
-# MAGIC 
+# MAGIC
 # MAGIC If you have permission to transition a model to a particular stage, you can make the transition directly by using the `MlflowClient.update_model_version()` function. If you do not have permission, you can request a stage transition using the REST API; for example:
-# MAGIC 
+# MAGIC
 # MAGIC ```
 # MAGIC %sh curl -i -X POST -H "X-Databricks-Org-Id: <YOUR_ORG_ID>" -H "Authorization: Bearer <YOUR_ACCESS_TOKEN>" https://<YOUR_DATABRICKS_WORKSPACE_URL>/api/2.0/preview/mlflow/transition-requests/create -d '{"comment": "Please move this model into production!", "model_version": {"version": 1, "registered_model": {"name": "power-forecasting-model"}}, "stage": "Production"}'
 
@@ -493,16 +498,16 @@ spark.sql('''
 
 # MAGIC %md
 # MAGIC Navigate to the model in the model registry
-# MAGIC 
-# MAGIC <img src="https://publicimg.blob.core.windows.net/images/Serving0.png" width="800">
+# MAGIC
+# MAGIC <img src="https://raw.githubusercontent.com/adb-essentials/quickstart-labs/main/images/Serving0.png" width="800">
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC Enable MLflow Model Serving from UI
-# MAGIC 
-# MAGIC <img src="https://publicimg.blob.core.windows.net/images/Serving1.png" width="1400">
-# MAGIC 
+# MAGIC
+# MAGIC <img src="https://raw.githubusercontent.com/adb-essentials/quickstart-labs/main/images/Serving1.png" width="1400">
+# MAGIC
 # MAGIC Depending on your workspace configuration, you may see serverless model serving as your main option   
 # MAGIC <img src="https://learn.microsoft.com/en-us/azure/databricks/_static/images/serverless-compute/serverless-models-enable-serving-pane.png" width="800">
 
@@ -510,8 +515,8 @@ spark.sql('''
 
 # MAGIC %md
 # MAGIC Select MLflow Model Serving compute size and click Save
-# MAGIC 
-# MAGIC <img src="https://publicimg.blob.core.windows.net/images/Serving2.png" width="800">
+# MAGIC
+# MAGIC <img src="https://raw.githubusercontent.com/adb-essentials/quickstart-labs/main/images/Serving2.png" width="800">
 
 # COMMAND ----------
 
@@ -560,5 +565,5 @@ pd.DataFrame({
 
 # MAGIC %md
 # MAGIC Turn off MLflow Model Serving compute
-# MAGIC 
-# MAGIC <img src="https://publicimg.blob.core.windows.net/images/Serving3.png" width="800">
+# MAGIC
+# MAGIC <img src="https://raw.githubusercontent.com/adb-essentials/quickstart-labs/main/images/Serving3.png" width="800">
