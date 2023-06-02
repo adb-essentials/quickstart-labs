@@ -63,13 +63,13 @@ CREATE OR REFRESH TEMPORARY STREAMING LIVE TABLE members_bronze_clean_v(
 )
 TBLPROPERTIES ("quality" = "silver")
 COMMENT "Cleansed bronze member view (i.e. what will become Silver)"
-AS SELECT * 
+AS SELECT *, current_timestamp() AS ETL_timestamp
 FROM STREAM(LIVE.members_bronze);
 
 -- COMMAND ----------
 
 CREATE OR REFRESH STREAMING LIVE TABLE members_silver
-TBLPROPERTIES ("quality" = "silver")
+TBLPROPERTIES ("quality" = "silver","delta.enableChangeDataFeed" = "true")
 COMMENT "Clean, merged members";
 
 -- COMMAND ----------
@@ -87,13 +87,13 @@ CREATE OR REFRESH TEMPORARY STREAMING LIVE TABLE user_logs_bronze_clean_v(
 )
 TBLPROPERTIES ("quality" = "silver")
 COMMENT "Cleansed bronze user logs view (i.e. what will become Silver)"
-AS SELECT * 
+AS SELECT *, current_timestamp() AS ETL_timestamp 
 FROM STREAM(LIVE.user_logs_bronze);
 
 -- COMMAND ----------
 
 CREATE OR REFRESH STREAMING LIVE TABLE user_logs_silver
-TBLPROPERTIES ("quality" = "silver")
+TBLPROPERTIES ("quality" = "silver","delta.enableChangeDataFeed" = "true")
 COMMENT "Clean, merged members";
 
 -- COMMAND ----------
@@ -122,13 +122,14 @@ SELECT
  is_auto_renew,
  to_date(CAST(transaction_date AS STRING), "yyyyMMdd") AS transaction_date,
  to_date(CAST(membership_expire_date AS STRING), "yyyyMMdd") AS membership_expire_date,
- is_cancel
+ is_cancel,
+ current_timestamp() AS ETL_timestamp
 FROM STREAM(LIVE.transactions_bronze);
 
 -- COMMAND ----------
 
 CREATE OR REFRESH STREAMING LIVE TABLE transactions_silver
-TBLPROPERTIES ("quality" = "silver")
+TBLPROPERTIES ("quality" = "silver","delta.enableChangeDataFeed" = "true")
 COMMENT "Clean, merged members";
 
 -- COMMAND ----------

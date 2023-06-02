@@ -233,11 +233,6 @@ DESCRIBE EXTENDED uc_demo.uc_demo_db.members
 
 -- COMMAND ----------
 
--- MAGIC %python
--- MAGIC input_df.write.format("delta").option("mode","overwrite").save("abfss://datalake@lafadlspltest.dfs.core.windows.net/uc_demo/EY/uc_demo_external_table_filesonly")
-
--- COMMAND ----------
-
 -- DBTITLE 1,Copy Into Ingest
 COPY INTO delta.`abfss://datalake@lafadlspltest.dfs.core.windows.net/uc_demo/uc_demo_db/user_logs`  
     FROM '${Data_PATH_Ingest}/user_logs/'
@@ -429,6 +424,16 @@ SHOW VIEWS
 -- COMMAND ----------
 
 -- MAGIC %md
+-- MAGIC ## Unity Catalog Lineage System Tables
+-- MAGIC There are system tables that capture the lineage that can be queried
+
+-- COMMAND ----------
+
+-- Currently only available via API in GA, but system table access is in a gated preview moving to GA in a couple months
+
+-- COMMAND ----------
+
+-- MAGIC %md
 -- MAGIC ## Unity Catalog Data Search
 -- MAGIC I can also search Unity Catalog for data with ACLs respected    
 -- MAGIC <img src="https://raw.githubusercontent.com/adb-essentials/quickstart-labs/main/images/Search.png" width="800px"/> 
@@ -447,3 +452,25 @@ SHOW VIEWS
 -- MAGIC
 -- MAGIC Upgrade the table by clicking the `Run upgrade` button or `Create query for upgrade` button and run the SQL code in Databricks SQL or a Notebook    
 -- MAGIC <img src="https://raw.githubusercontent.com/adb-essentials/quickstart-labs/main/images/Upgrade3.png" width="1000px"/> 
+
+-- COMMAND ----------
+
+-- MAGIC %md 
+-- MAGIC Demo Cleanup As Needed
+
+-- COMMAND ----------
+
+DROP DATABASE uc_demo.uc_demo_db CASCADE
+
+-- COMMAND ----------
+
+DROP CATALOG uc_demo CASCADE
+
+-- COMMAND ----------
+
+-- MAGIC %py
+-- MAGIC dbutils.fs.rm("abfss://datalake@lafadlspltest.dfs.core.windows.net/uc_demo/", recurse=True)
+
+-- COMMAND ----------
+
+list "abfss://datalake@lafadlspltest.dfs.core.windows.net/uc_demo/"
