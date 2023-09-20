@@ -11,34 +11,12 @@
 
 # COMMAND ----------
 
-# DBTITLE 1,Lakehouse Workshop Storage Variables
-# MAGIC %run "../Lakehouse Workshop/00 - Set Lab Variables"
+# DBTITLE 1,Make sure our data has been loaded into the catalog/schema and Variables have been set
+# MAGIC %run "../Lakehouse Workshop/00 - Setup Notebooks/00 - Setup Bronze Data ML"
 
 # COMMAND ----------
 
-# MAGIC %md
-# MAGIC ### Notebook Widgets
-# MAGIC The following notebook widgets are being created automatically for you and defaulted to your set variables for more easier parameterization of code.  
-
-# COMMAND ----------
-
-dbutils.widgets.removeAll()
-
-# COMMAND ----------
-
-dbutils.widgets.text("UserDB", UserDB)
-
-# COMMAND ----------
-
-dbutils.widgets.text("Data_PATH_User", Data_PATH_User)
-
-# COMMAND ----------
-
-dbutils.widgets.text("Data_PATH_Ingest", Data_PATH_Ingest)
-
-# COMMAND ----------
-
-# DBTITLE 1,Install Libraries
+# DBTITLE 1,Imports
 from pyspark.sql.types import *
 from pyspark.sql.functions import *
 from databricks.feature_store import *
@@ -68,16 +46,49 @@ import mlflow
 
 # COMMAND ----------
 
-# DBTITLE 1,Load training data
-# MAGIC %run "../Lakehouse Workshop/00 - Setup Notebooks/00 - Setup Bronze Data ML"
+# DBTITLE 1,Use our Catalog and Schema
+spark.sql(f"USE CATALOG {LabCatalog}")
+spark.sql(f"USE {UserDB}")
+
+# COMMAND ----------
+
+# DBTITLE 1,Load training data - TODO: should we put back some equivalent of "Setup Bronze Data ML" to make this standalone? (we depend on 02 running previously)
+#%run "../Lakehouse Workshop/00 - Setup Notebooks/00 - Setup Bronze Data ML"
+
+# train dataset schema
+train_schema = StructType([
+  StructField('msno', StringType()),
+  StructField('is_churn', IntegerType())
+  ])
+
+# read data from csv
+train_csv = (
+  spark
+    .read
+    .csv(
+      Data_PATH_Ingest+'/train_v2.csv',
+      schema=train_schema,
+      header=True
+      )
+    )
+
+# persist in delta lake format
+(
+  train_csv
+    .write
+    .format('delta')
+    .mode('overwrite')
+    .saveAsTable('bronze_train')
+  )
+
 
 # COMMAND ----------
 
 # DBTITLE 1,Load pre-loaded data
-transactions = spark.read.format("delta").load(Data_PATH_User + '/bronze/transactions')
-members = spark.read.format("delta").load(Data_PATH_User + "/members")
-user_logs = spark.read.format("delta").load(Data_PATH_User + '/bronze/user_log/')
-train = spark.read.format("delta").load(Data_PATH_User + '/bronze/train')
+transactions = spark.read.format("delta").table('bronze_transactions')
+members = spark.read.format("delta").table('bronze_members')
+user_logs = spark.read.format("delta").table('bronze_user_log')
+train = spark.read.format("delta").table('bronze_train')
 
 # COMMAND ----------
 
@@ -114,14 +125,14 @@ member_feature = member_feature.na.fill("NA", colNames)
 gender_index=StringIndexer().setInputCol("gender").setOutputCol("gender_indexed")
 member_feature=gender_index.fit(member_feature).transform(member_feature)
 
-member_feature.write.format('delta').mode('overwrite').option('mergeSchema','true').save(Data_PATH_User + '/silver/member_feature')
+member_feature.write.format('delta').mode('overwrite').option('mergeSchema','true').saveAsTable('silver_member_features')
 
-# create table object to make delta lake queriable
-spark.sql('''
-  CREATE TABLE IF NOT EXISTS {0}.member_features
-  USING DELTA 
-  LOCATION "{1}/silver/member_feature"
-  '''.format(UserDB, Data_PATH_User))
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC ALTER TABLE silver_member_features ALTER COLUMN msno SET NOT NULL;
+# MAGIC ALTER TABLE silver_member_features ADD CONSTRAINT silver_member_features_pk PRIMARY KEY(msno)
 
 # COMMAND ----------
 
@@ -129,7 +140,7 @@ spark.sql('''
 fs = FeatureStoreClient()
 
 fs.register_table(
-  delta_table= UserDB + '.member_features',
+  delta_table= UserDB + '.silver_member_features',
   primary_keys='msno',
   description='Member features commonly used in ML model'
 )
@@ -176,14 +187,8 @@ churn_data = churn_data.drop(*columns_to_drop)
 colNames = ["gender"]
 churn_data = churn_data.na.fill("NA", colNames)
 
-churn_data.write.format('delta').mode('overwrite').option("mergeSchema","true").save(Data_PATH_User + '/silver/churndata')
+churn_data.write.format('delta').mode('overwrite').option("mergeSchema","true").saveAsTable('silver_churndata')
 
-# create table object to make delta lake queriable
-spark.sql('''
-  CREATE TABLE IF NOT EXISTS {0}.churndata
-  USING DELTA 
-  LOCATION '{1}/silver/churndata'
-  '''.format(UserDB, Data_PATH_User))
 
 # COMMAND ----------
 
@@ -193,7 +198,7 @@ spark.sql('''
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC select * from ${UserDB}.churndata
+# MAGIC select * from silver_churndata
 
 # COMMAND ----------
 
@@ -206,7 +211,7 @@ spark.sql('''
 # a single feature from 'product_features'
 feature_lookups = [
     FeatureLookup(
-      table_name = UserDB + '.member_features',
+      table_name = UserDB + '.silver_member_features',
       feature_names = ['no_transactions','Total25','Total100','UniqueSongs','TotalSecHeard','city','bd','registered_via','registration_init_time','gender_indexed'],
       lookup_key = 'msno'
     )
@@ -215,7 +220,7 @@ feature_lookups = [
 fs = FeatureStoreClient()
 
 training_set = fs.create_training_set(
-  df=spark.read.table(UserDB + ".churndata"),
+  df=spark.read.table(UserDB + ".silver_churndata"),
   feature_lookups = feature_lookups,
   label = 'is_churn',
   exclude_columns = ['msno']
@@ -223,19 +228,13 @@ training_set = fs.create_training_set(
 
 training_df = training_set.load_df().where("registration_init_time is not null")
 
-training_df.write.format('delta').mode('overwrite').option('mergeSchema','true').save(Data_PATH_User + '/silver/trainingdata')
+training_df.write.format('delta').mode('overwrite').option('mergeSchema','true').saveAsTable('silver_trainingdata')
 
-# create table object to make delta lake queriable
-spark.sql('''
-  CREATE TABLE IF NOT EXISTS {0}.trainingdata
-  USING DELTA 
-  LOCATION '{1}/silver/trainingdata'
-  '''.format(UserDB, Data_PATH_User))
 
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC select * from ${UserDB}.trainingdata
+# MAGIC select * from silver_trainingdata
 
 # COMMAND ----------
 
@@ -244,7 +243,7 @@ spark.sql('''
 
 # COMMAND ----------
 
-trainDF, testDF = spark.table(UserDB + '.trainingdata').randomSplit([.8, .2], seed=42)
+trainDF, testDF = spark.table('silver_trainingdata').randomSplit([.8, .2], seed=42)
 
 # COMMAND ----------
 
@@ -448,7 +447,7 @@ model_uri=f"models:/{model_name}/{model_version}"
 # score the testDF dataframe using the python function
 # Batch scoring in Databricks is that easy and scalable
 predict = mlflow.pyfunc.spark_udf(spark, model_uri)
-predDF = testDF.withColumn("prediction", predict(*testDF.drop("is_churn").columns))
+predDF = testDF.withColumn("prediction", (predict(*testDF.drop("is_churn").columns)[0]).cast("double"))
 display(predDF)
 
 # COMMAND ----------
@@ -472,22 +471,16 @@ print(f"f1 on test dataset: {f1}")
 
 # COMMAND ----------
 
-goldDF = spark.table(UserDB + '.trainingdata')
-goldDF = goldDF.withColumn("prediction", predict(*goldDF.drop("is_churn").columns))
+goldDF = spark.table('silver_trainingdata')
+goldDF = goldDF.withColumn("prediction", (predict(*goldDF.drop("is_churn").columns)[0]).cast("double"))
 
-goldDF.write.format('delta').mode('overwrite').option('mergeSchema','true').save(Data_PATH_User + '/gold/scoreddata')
+goldDF.write.format('delta').mode('overwrite').option('mergeSchema','true').saveAsTable('gold_scoreddata')
 
-# create table object to make delta lake queriable
-spark.sql('''
-  CREATE TABLE IF NOT EXISTS {0}.scoreddata
-  USING DELTA 
-  LOCATION '{1}/gold/scoreddata'
-  '''.format(UserDB, Data_PATH_User))
 
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC SELECT * FROM ${UserDB}.scoreddata
+# MAGIC SELECT * FROM gold_scoreddata
 
 # COMMAND ----------
 
@@ -520,27 +513,32 @@ spark.sql('''
 
 # COMMAND ----------
 
+print(model_name)
+
+# COMMAND ----------
+
 
 import os
 import requests
 import numpy as np
 import pandas as pd
 
-# ModelName = "KKBox-Churn-Prediction"
+# ModelName = "KKBox-Churn-Prediction" - UserDB
 # Version = "2"
 
 ModelName = model_name
 Version = model_version
 
-url = f'https://{Workspace}/model/{ModelName}/{Version}/invocations'
+url = f'https://{Workspace}/serving-endpoints/{ModelName}/invocations'
 
 def create_tf_serving_json(data):
   return {'inputs': {name: data[name].tolist() for name in data.keys()} if isinstance(data, dict) else data.tolist()}
 
 def score_model(dataset):
-  url = f'https://{Workspace}/model/{ModelName}/{Version}/invocations'
+  url = f'https://{Workspace}/serving-endpoints/{ModelName}/invocations'
   headers = {'Authorization': f'Bearer {Databricks_Token}'}
-  data_json = dataset.to_dict(orient='split') if isinstance(dataset, pd.DataFrame) else create_tf_serving_json(dataset)
+  data_json = {"dataframe_split": dataset.to_dict(orient='split')} if isinstance(dataset, pd.DataFrame) else create_tf_serving_json(dataset)
+  
   response = requests.request(method='POST', headers=headers, url=url, json=data_json)
   if response.status_code != 200:
     raise Exception(f'Request failed with status {response.status_code}, {response.text}')

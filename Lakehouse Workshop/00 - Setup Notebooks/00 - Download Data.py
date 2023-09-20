@@ -1,6 +1,6 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC ### STOP do not run this notebook individually. This notebook will be executed from parent notebooks at the proper time. 
+# MAGIC ### Run this notebook 1x for data ingestion setup for an entire team
 
 # COMMAND ----------
 
@@ -10,15 +10,36 @@
 
 # COMMAND ----------
 
-dbutils.widgets.text("UserDB", "")
-dbutils.widgets.text("Data_PATH_Ingest", "")
-dbutils.widgets.text("Data_PATH_User", "")
+dbutils.widgets.text("LabCatalog", "")
+dbutils.widgets.text("IngestionDB", "")
+dbutils.widgets.text("Data_Path_Catalog", "")
 
 # COMMAND ----------
 
-UserDB = dbutils.widgets.get("UserDB")
-Data_PATH_Ingest = dbutils.widgets.get("Data_PATH_Ingest")
-Data_PATH_User = dbutils.widgets.get("Data_PATH_User")
+LabCatalog = dbutils.widgets.get("LabCatalog")
+IngestionDB = dbutils.widgets.get("IngestionDB")
+Data_Path_Catalog = dbutils.widgets.get("Data_Path_Catalog")
+
+# COMMAND ----------
+
+spark.sql("""
+          CREATE CATALOG IF NOT EXISTS {0}
+          MANAGED LOCATION '{1}'
+          COMMENT 'This is the Lakehouse Labs catalog';
+          """.format(LabCatalog, Data_Path_Catalog))
+
+# COMMAND ----------
+
+spark.sql("""
+          CREATE SCHEMA IF NOT EXISTS {0}.{1}
+          COMMENT "This is the data ingestion schema";
+          """.format(LabCatalog, IngestionDB))
+
+# COMMAND ----------
+
+spark.sql("""
+          CREATE VOLUME IF NOT EXISTS {0}.{1}.kkbox_ingestion;
+          """.format(LabCatalog, IngestionDB))
 
 # COMMAND ----------
 
@@ -46,7 +67,7 @@ Data_PATH_User = dbutils.widgets.get("Data_PATH_User")
 
 # COMMAND ----------
 
-dbutils.fs.mkdirs(Data_PATH_Ingest)
+Data_PATH_Ingest = "/Volumes/{0}/{1}/kkbox_ingestion".format(LabCatalog, IngestionDB)
 
 # COMMAND ----------
 
@@ -83,3 +104,11 @@ dbutils.fs.cp("dbfs:/FileStore/part-00003-tid-5999996899273686881-0be686b1-961c-
 # COMMAND ----------
 
 dbutils.fs.ls(Data_PATH_Ingest)
+
+# COMMAND ----------
+
+spark.sql("GRANT USE CATALOG, CREATE SCHEMA ON CATALOG {0} to `users`".format(LabCatalog))
+
+# COMMAND ----------
+
+spark.sql("GRANT READ VOLUME ON SCHEMA {0}.{1} to `users`".format(LabCatalog, IngestionDB))

@@ -37,17 +37,17 @@
 -- COMMAND ----------
 
 -- MAGIC %md
--- MAGIC ### Copy the Server hostName and HTTP Path from the SQL Warehouse into your Power BI parameters. Enter the metastore as hive_metastore and database as your variable `UserDB`_DLT. Click Load  
--- MAGIC <img src="https://raw.githubusercontent.com/adb-essentials/quickstart-labs/c8be0896dc688c045ec3866e1fc744981f47b844/images/PBI4.png" width="800">
+-- MAGIC ### Copy the Server hostName and HTTP Path from the SQL Warehouse into your Power BI parameters. Enter the catalog as lakehouselabs and database as your variable `UserDB`_DLT. Click Load  
+-- MAGIC <img src="https://raw.githubusercontent.com/adb-essentials/quickstart-labs/private-env/images/PBI4.1.png" width="800">
 
 -- COMMAND ----------
 
 -- MAGIC %md
 -- MAGIC ### Open a new browser tab. In the lefthand navigation, change the persona switcher to SQL  
--- MAGIC <img src="https://raw.githubusercontent.com/adb-essentials/quickstart-labs/c8be0896dc688c045ec3866e1fc744981f47b844/images/DBSQL2.png" width="300">
+-- MAGIC <img src="https://raw.githubusercontent.com/adb-essentials/quickstart-labs/private-env/images/DBSQL2.2.png" width="200">
 -- MAGIC
 -- MAGIC ### Click on SQL Warehouses, click on the SQL Warehouse for your lab environment, click on connection details  
--- MAGIC <img src="https://raw.githubusercontent.com/adb-essentials/quickstart-labs/c8be0896dc688c045ec3866e1fc744981f47b844/images/PBI1.png" width="800">
+-- MAGIC <img src="https://raw.githubusercontent.com/adb-essentials/quickstart-labs/private-env/images/PBI1.1.png" width="700">
 
 -- COMMAND ----------
 

@@ -22,7 +22,7 @@
 -- MAGIC ## Explore Your Data
 -- MAGIC In 2018, [KKBox](https://www.kkbox.com/) - a popular music streaming service based in Taiwan - released a [dataset](https://www.kaggle.com/c/kkbox-churn-prediction-challenge/data) consisting of a little over two years of (anonymized) customer transaction and activity data with the goal of challenging the Data & AI community to predict which customers would churn in a future period.  
 -- MAGIC
--- MAGIC The primary data files are organized in the storage container:
+-- MAGIC The primary data files are organized in the UC Volume similar to this:
 -- MAGIC
 -- MAGIC <img src='https://brysmiwasb.blob.core.windows.net/demos/images/kkbox_filedownloads.png' width=150>
 -- MAGIC
@@ -37,13 +37,6 @@
 -- MAGIC %md
 -- MAGIC ### Databricks SQL is a DW and BI Engine directly on the Lakehouse  
 -- MAGIC <img src="https://raw.githubusercontent.com/adb-essentials/quickstart-labs/c8be0896dc688c045ec3866e1fc744981f47b844/images/DBSQL1.1.png" width="1200">
-
--- COMMAND ----------
-
--- MAGIC %md
--- MAGIC ### Open a new browser tab. In the lefthand navigation, change the persona switcher to SQL  
--- MAGIC
--- MAGIC <img src="https://raw.githubusercontent.com/adb-essentials/quickstart-labs/c8be0896dc688c045ec3866e1fc744981f47b844/images/DBSQL2.1.png" width="300">
 
 -- COMMAND ----------
 
@@ -87,7 +80,7 @@
 -- COMMAND ----------
 
 -- MAGIC %md
--- MAGIC ### Browse your databases and tables using Data Explorer
+-- MAGIC ### Browse your databases and tables using Catalog Explorer
 -- MAGIC In Data Explorer you can see the objects you have access to  
 -- MAGIC For each table/view, you can view the size, schema, sample data, table details, and even version history of the table.  
 -- MAGIC If you are using Unity Catalog, you'll also be able to view the table and column level lineage that is automatically captured by Databricks  
@@ -109,6 +102,8 @@
 
 -- MAGIC %md
 -- MAGIC ### Queries are SQL code, results, and visualizations that you can save
+-- MAGIC Queries have been created for you in the workspace under /databrickslabs/{UserName}/
+-- MAGIC
 -- MAGIC Create SQL quieres, save them, and share them with your team  
 -- MAGIC View query results, or create data visualizations directly in the UI  
 -- MAGIC Schedule refreshes of your queries so that the results are always up to date  

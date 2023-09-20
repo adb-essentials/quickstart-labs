@@ -16,7 +16,7 @@ TBLPROPERTIES ("quality" = "landing")
 AS
 SELECT * 
   FROM cloud_files(
-        "${Data_PATH_Ingest}/transactions*.csv", "csv", 
+        "/Volumes/lakehouselabs/ingesteddata/kkbox_ingestion/transactions*.csv", "csv", 
         map("cloudFiles.inferColumnTypes", "true",
             "header", "true"
             )
@@ -30,7 +30,7 @@ TBLPROPERTIES ("quality" = "landing")
 AS
 SELECT * 
   FROM cloud_files(
-        "${Data_PATH_Ingest}/members/", "csv", 
+        "/Volumes/lakehouselabs/ingesteddata/kkbox_ingestion/members/", "csv", 
         map("cloudFiles.inferColumnTypes", "true",
             "header", "true"
             )
@@ -44,7 +44,7 @@ TBLPROPERTIES ("quality" = "landing")
 AS
 SELECT * 
   FROM cloud_files(
-        "${Data_PATH_Ingest}/user_logs/", "csv", 
+        "/Volumes/lakehouselabs/ingesteddata/kkbox_ingestion/user_logs/", "csv", 
         map("cloudFiles.inferColumnTypes", "true",
             "header", "true"
             )
